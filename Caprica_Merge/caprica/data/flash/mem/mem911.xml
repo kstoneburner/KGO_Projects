@@ -1,0 +1,25 @@
+<capmem>
+<name>
+DB1x1 NO FLY</name>
+<mebusname>
+<mebus id="0">
+SS2</mebus>
+</mebusname>
+<keyInfo>
+<key id="0">
+<keybusname>
+<keybus id="0">
+K1 LEFT BOX</keybus>
+</keybusname>
+</key>
+<key id="1">
+<keybusname>
+<keybus id="0">
+K2 RIGHT BOX</keybus>
+</keybusname>
+</key>
+</keyInfo>
+<version>
+459365
+</version>
+</capmem>

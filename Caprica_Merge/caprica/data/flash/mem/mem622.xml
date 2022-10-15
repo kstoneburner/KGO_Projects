@@ -1,0 +1,19 @@
+<capmem>
+<name>
+622 ME3 C1 WX2</name>
+<mebusname>
+<mebus id="0">
+BACKGROUND</mebus>
+</mebusname>
+<keyInfo>
+<key id="7">
+<keybusname>
+<keybus id="0">
+K8 CAMERA</keybus>
+</keybusname>
+</key>
+</keyInfo>
+<version>
+459365
+</version>
+</capmem>

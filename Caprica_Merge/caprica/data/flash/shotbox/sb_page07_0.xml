@@ -1,0 +1,104 @@
+<shotbox>
+<name>
+PM MAIN</name>
+<ref>
+<bttn id="0">
+6703
+</bttn>
+<bttn id="1">
+1793
+</bttn>
+<bttn id="2">
+1794
+</bttn>
+<bttn id="3">
+1795
+</bttn>
+<bttn id="4">
+1796
+</bttn>
+<bttn id="5">
+1797
+</bttn>
+<bttn id="6">
+1798
+</bttn>
+<bttn id="7">
+5671
+</bttn>
+<bttn id="8">
+11822
+</bttn>
+<bttn id="9">
+11822
+</bttn>
+<bttn id="10">
+11822
+</bttn>
+<bttn id="11">
+11822
+</bttn>
+<bttn id="12">
+11822
+</bttn>
+<bttn id="13">
+2575
+</bttn>
+<bttn id="14">
+6401
+</bttn>
+<bttn id="15">
+11822
+</bttn>
+<bttn id="16">
+11822
+</bttn>
+<bttn id="17">
+11822
+</bttn>
+<bttn id="18">
+11822
+</bttn>
+<bttn id="19">
+6703
+</bttn>
+<bttn id="20">
+7169
+</bttn>
+<bttn id="21">
+6400
+</bttn>
+<bttn id="22">
+11822
+</bttn>
+<bttn id="23">
+11822
+</bttn>
+<bttn id="24">
+11822
+</bttn>
+<bttn id="25">
+11822
+</bttn>
+<bttn id="26">
+7168
+</bttn>
+<bttn id="27">
+7171
+</bttn>
+</ref>
+<version>
+459365
+</version>
+<mnem_style>
+<colour>
+4
+</colour>
+<reserved>
+8
+</reserved>
+<brightOffset>
+192
+</brightOffset>
+</mnem_style>
+</shotbox>

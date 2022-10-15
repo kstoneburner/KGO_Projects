@@ -182,7 +182,7 @@ class widget_builder():
 
 		#### Build the Export Folder Path
 		if not os.path.exists(export_folder):
-			os.mkdir("." + export_folder)
+			os.mkdir( export_folder)
 
 		#### Build the Temporary Folder Path
 		if not os.path.exists(tempFolderName):
@@ -223,14 +223,14 @@ class widget_builder():
 		#//*** Open the Destination File
 		#//************************************
 		try:
-			dstTar = tarfile.open(self.merge_source_filename,"r:gz")
+			dstTar = tarfile.open(self.merge_target_filename,"r:gz")
 		except:
 			self.draw_response( "Trouble opening Destination file. Is it a Caprica .tgz file?")
 			return
 		
 		#//*** Extract the target folder. We'll be keeping most of these
 		dstTar.extractall(tempFolderName,dstTar.getmembers())
-
+		
 		for item in srcTar.getmembers():
 			if "./caprica/data/flash/custct/" in item.name:
 				#//*** Only Process xml files
@@ -252,20 +252,28 @@ class widget_builder():
 							f = open(tempFolderName + "/"+ item.name,"wb")
 							f.write(sourceCC.read())
 							f.close()
+		
+		destFilename = export_folder + "merged_"+self.merge_target_filename.split("/")[-1]
 
-		destFilename = "./"+export_folder + "merged_"+self.merge_target_filename
+		destFilename = os.getcwd() +  "\\merged\\merged_"+self.merge_target_filename.split("/")[-1]
 
-		print("Building New File: " + destFilename)
-		self.draw_response("Building New File: " + destFilename)
 		finalTar = tarfile.open(destFilename,"w:gz")
-
-		for root, dirs, files in os.walk(tempFolderName + "\\"):
+		
+		for root, dirs, files in os.walk(tempFolderName.replace("/","\\")):
+		#for root, dirs, files in os.walk(os.getcwd()):
+			#for dir_ in dirs:
+			#	finalTar.add(os.path.join(root, dir_))
+			#	print(os.path.join(root, dir_))
+			
 			for file in files:
-				finalTar.add(os.path.join(root, file),arcname=file)
-				print("Adding: " + os.path.join(root, file))
-				self.draw_response("Adding: " + os.path.join(root, file))
+				filename = root.replace(os.getcwd(),"")+"\\"+file
+				filename = root.replace(tempFolderName.replace("/","\\"),"")+"\\"+file
+				
+				finalTar.add(os.path.join(root, file),arcname=filename)
+				print("Adding: " + filename)
+				self.draw_response("Adding: " + filename)
 		finalTar.close()
-
+		
 		################################################
 		################################################
 		#### File Cleanup
@@ -281,7 +289,7 @@ class widget_builder():
 		print("Deletng Temp Folder")
 		self.draw_response("Deletng Temp Folder")
 		shutil.rmtree(tempFolderName)
-
+		print(tempFolderName)
 		self.draw_response("Merged file saved to:\n"+destFilename)
 
 
@@ -301,7 +309,7 @@ if __name__ == '__main__':
 
 
 	# Set the geometry of tkinter frame
-	win.geometry("900x250")
+	win.geometry("900x300")
 
 	#//*** Initialize Widget Builder Object
 	wb = widget_builder()
@@ -349,7 +357,11 @@ if __name__ == '__main__':
 		print("Quitting")
 		sys.exit()
 
-	
+	bank_msg = "Merging Custom Control Bank(s): "
+	for bank in banks:
+		bank_msg += f"{bank},"
+
+	bank_msg = bank_msg[:-1]
 	#//*** Convert banks to Zero based indexes
 	for x in range(len(banks)):
 		banks[x] = int(banks[x])-1
@@ -362,6 +374,7 @@ if __name__ == '__main__':
 	for widget in widgets:
 		wb.add_widgets(widget)
 
+	wb.widget_holder["bank_label"]["text"] = bank_msg		
 	#//*** Automatically assign source and target files if in debug mode
 	if debug_mode:
 		filename = "WLS_CAPRICA NEW GFX 7-13-22.tgz"
@@ -369,7 +382,7 @@ if __name__ == '__main__':
 		wb.widget_holder["merge_source_label"]["text"] = filename
 
 
-		filename = "KGO_Caprica-Diskset-2022-10-06T21 40 18PCR2_Launch_Candidate_9.tgz"
+		filename = "KGO_PCR3_Launch_Candidate_9.tgz"
 		wb.merge_target_filename = filename
 		wb.widget_holder["merge_target_label"]["text"] = filename
 

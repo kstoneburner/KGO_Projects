@@ -1,0 +1,107 @@
+<shotbox>
+<name>
+PARADE</name>
+<ref>
+<bttn id="0">
+2304
+</bttn>
+<bttn id="1">
+2305
+</bttn>
+<bttn id="2">
+2306
+</bttn>
+<bttn id="3">
+2307
+</bttn>
+<bttn id="4">
+2308
+</bttn>
+<bttn id="5">
+2309
+</bttn>
+<bttn id="6">
+2310
+</bttn>
+<bttn id="7">
+10523
+</bttn>
+<bttn id="8">
+10524
+</bttn>
+<bttn id="9">
+10525
+</bttn>
+<bttn id="10">
+10526
+</bttn>
+<bttn id="11">
+10527
+</bttn>
+<bttn id="12">
+10529
+</bttn>
+<bttn id="13">
+10521
+</bttn>
+<bttn id="14">
+10519
+</bttn>
+<bttn id="15">
+10520
+</bttn>
+<bttn id="16">
+10522
+</bttn>
+<bttn id="17">
+10496
+</bttn>
+<bttn id="18">
+10497
+</bttn>
+<bttn id="19">
+10542
+</bttn>
+<bttn id="20">
+10543
+</bttn>
+<bttn id="21">
+10516
+</bttn>
+<bttn id="22">
+11055
+</bttn>
+<bttn id="23">
+11055
+</bttn>
+<bttn id="24">
+10498
+</bttn>
+<bttn id="25">
+10499
+</bttn>
+<bttn id="26">
+10500
+</bttn>
+<bttn id="27">
+7182
+</bttn>
+</ref>
+<version>
+459365
+</version>
+<mnem_style>
+<font>
+1
+</font>
+<colour>
+4
+</colour>
+<reserved>
+8
+</reserved>
+<brightOffset>
+192
+</brightOffset>
+</mnem_style>
+</shotbox>

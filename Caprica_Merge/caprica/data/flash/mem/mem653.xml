@@ -1,0 +1,19 @@
+<capmem>
+<name>
+653 ME3B C6WX3</name>
+<mebusname>
+<mebus id="0">
+BACKGROUND</mebus>
+</mebusname>
+<keyInfo>
+<key id="0">
+<keybusname>
+<keybus id="0">
+K1 CAMERA</keybus>
+</keybusname>
+</key>
+</keyInfo>
+<version>
+459365
+</version>
+</capmem>

@@ -1,0 +1,21 @@
+<capmem>
+<name>
+WC MASTER XPT</name>
+<keyInfo>
+<key id="8">
+<keybusname>
+<keybus id="0">
+V 9 AUX 12</keybus>
+</keybusname>
+</key>
+<key id="9">
+<keybusname>
+<keybus id="0">
+V10 AUX 14</keybus>
+</keybusname>
+</key>
+</keyInfo>
+<version>
+459365
+</version>
+</capmem>

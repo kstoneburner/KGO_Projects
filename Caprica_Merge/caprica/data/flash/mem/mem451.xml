@@ -1,0 +1,33 @@
+<capmem>
+<name>
+WC DB11</name>
+<keyInfo>
+<key id="0">
+<keybusname>
+<keybus id="0">
+K1 Left</keybus>
+</keybusname>
+</key>
+<key id="1">
+<keybusname>
+<keybus id="0">
+K2 Right</keybus>
+</keybusname>
+</key>
+<key id="6">
+<keybusname>
+<keybus id="0">
+K7 Box Grx</keybus>
+</keybusname>
+</key>
+<key id="7">
+<keybusname>
+<keybus id="0">
+K8 Ctr Key</keybus>
+</keybusname>
+</key>
+</keyInfo>
+<version>
+459365
+</version>
+</capmem>
