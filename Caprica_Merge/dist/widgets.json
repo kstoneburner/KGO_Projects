@@ -1,0 +1,102 @@
+[
+{
+	"type" : "label",
+	"text" : "Source:",
+
+	"row" : 0,
+	"column" : 0,
+	"options" : {
+		"font" : "Georgia 15"
+	}
+},
+
+{
+	"type" : "button",
+	"hook" : "merge_source",
+	"text" : "Browse",
+	"row" : 1,
+	"column" : 0,
+	"action" : "select_filename",
+	"target" : "merge_source_filename"
+},
+
+{
+	"type" : "label",
+	"text" : "No File Selected",
+	"hook" : "merge_source_label",
+	"row" : 1,
+	"column" : 1,
+	"options" : {
+		"font" : "Georgia 10"
+	}
+},
+
+{
+	"type" : "label",
+	"text" : " ",
+
+	"row" : 2,
+	"columnspan" : 2,
+	"options" : {
+		"font" : "Georgia 20"
+	}
+},
+{
+	"type" : "label",
+	"text" : "Target:",
+
+	"row" : 3,
+	"column" : 0,
+	"options" : {
+		"font" : "Georgia 15"
+	}
+},
+
+{
+	"type" : "button",
+	"hook" : "merge_target",
+	"text" : "Browse",
+	"row" : 4,
+	"column" : 0,
+	"action" : "select_filename",
+	"target" : "merge_target_filename"
+},
+
+{
+	"type" : "label",
+	"text" : "No File Selected",
+	"hook" : "merge_target_label",
+	"row" : 4,
+	"column" : 1,
+	"options" : {
+		"font" : "Georgia 10"
+	}
+},
+{
+	"type" : "label",
+	"text" : " ",
+	"row" : 5,
+	"column" : 0,
+	"options" : {
+		"font" : "Georgia 10"
+	}
+},
+{
+	"type" : "label",
+	"text" : " ",
+	"hook" : "response_label",
+	"row" : 6,
+	"column" : 1,
+	"options" : {
+		"font" : "Georgia 10"
+	}
+},
+{
+	"type" : "button",
+	"text" : "Export",
+	"width" : 10,
+	"row" : 7,
+	"column" : 1,
+	"action" : "export"
+}
+]
