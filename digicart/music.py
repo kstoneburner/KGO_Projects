@@ -19,7 +19,8 @@ import keyboard #pip install keyboard
 folder_path = "./music/1_0_0 - 3pm Playlist"
 
 music_path = "./music/"
-music_file_types = [".mp3",".wav", ".aiff"]
+music_file_types = [".mp3",".wav", ".aiff", ".mp4"]
+video_file_types = [".mp4"]
 config_filename = "player.config"
 #//*** Set Default host IP 
 h_name = socket.gethostname()
@@ -28,7 +29,7 @@ PORTS = [8001]
 
 
 #//*** Clear the Screen on each action. False aids in debugging.
-clear_screen = True
+clear_screen = False
 
 action_queue = []
 pc = {
@@ -268,6 +269,8 @@ def is_valid_filetype(filename):
             return True
     return False
 
+
+
 def sort_folder(files):
 
     #//*** Sort by Drive, Folder, Cut so everything is in Digicart Order
@@ -399,8 +402,8 @@ def do_action(input_action,input_cut=None):
 
                     
                 #//*** Verify file has correct extension
-                if is_valid_filetype(x):
-
+                if is_valid_filetype(filename):
+                    print(filename)
                     #//*** Add Track Name
                     music_obj["track_names"].append(filename)
                     #//*** Add Full Path
@@ -419,7 +422,6 @@ def do_action(input_action,input_cut=None):
         for filename in os.listdir(folder_path):
             if os.path.isfile(folder_path + "/" + filename):
                 pc["playlist"].append(folder_path + "/" + filename)
-                pc["p"] = vlc.MediaPlayer(pc["playlist"][pc["play_counter"]])
                 pc["display_name"] = pc["playlist"][pc["play_counter"]]
         """
 
@@ -431,8 +433,9 @@ def do_action(input_action,input_cut=None):
             pc["selected_cut"] = list(music_objs.keys())[pc["cut_index"]]
 
             track_filename = music_objs[ pc["selected_cut"] ]['track_paths'][0]
-            pc["p"] = vlc.MediaPlayer(track_filename)
-            pc["p"].audio_set_volume(70)
+
+            do_action("load_track",track_filename)
+
         else:
             
             print("No Songs or Playlists in Music Folder")
@@ -445,6 +448,7 @@ def do_action(input_action,input_cut=None):
         pc["playing"] = True
         while pc["p"].is_playing() == False:
             pc["p"].play()
+
             time.sleep(.01)
             return
 
@@ -470,9 +474,11 @@ def do_action(input_action,input_cut=None):
 
         #//*** Play if we should be playing
         if pc["playing"]:
-
+            pc["p"].set_fullscreen(True)
             print("start playing")
+            print((pc["p"].video_get_track()))
             pc["p"].play()
+
 
             #//*** Wait till player indicates playing. Helps with timing
             while not pc["p"].is_playing():
@@ -512,9 +518,8 @@ def do_action(input_action,input_cut=None):
             selected_index = music_obj["selected"]
             track = music_obj['track_paths'][selected_index]
 
-            #//*** Load Song
-            pc["p"] = vlc.MediaPlayer(track)
-
+            do_action("load_track",track)
+            
             #//*** Play Song
             pc["p"].play()
 
@@ -528,8 +533,21 @@ def do_action(input_action,input_cut=None):
             selected_index = music_obj["selected"]
             track = music_obj['track_paths'][selected_index]
 
-            #//*** Load Song
-            pc["p"] = vlc.MediaPlayer(track)
+            
+            do_action("load_track",track)
+
+    if input_action == "load_track":
+        track = input_cut
+        #//*** Load Song
+        pc["p"] = vlc.MediaPlayer(track)
+
+        pc["p"].audio_set_volume(70)
+        pc["p"].set_fullscreen(True)
+
+        print(dir(pc["p"]))
+
+
+        
 
     if input_action == "next_track" or input_action == "prev_track":
 
@@ -568,9 +586,7 @@ def do_action(input_action,input_cut=None):
         selected_index = music_obj["selected"]
         track = music_obj['track_paths'][selected_index]
 
-        #//*** Load Song
-        pc["p"] = vlc.MediaPlayer(track)
-
+        do_action("load_track",track)
 
         #//**** Load and Play the Track
         if pc["playing"]:
@@ -638,8 +654,8 @@ def do_action(input_action,input_cut=None):
 
                 pc["playing"] = False
 
-                #//*** Load Song
-                pc["p"] = vlc.MediaPlayer(track)
+                do_action("load_track",track)
+
                 while pc["p"].is_playing():
                     pc["p"].stop()
                     time.sleep(.1)
@@ -672,8 +688,7 @@ def do_action(input_action,input_cut=None):
                 do_action("stop")
 
                 #//*** Load Song
-                pc["p"] = vlc.MediaPlayer(track)
-
+                do_action("load_track",track)
                 #//*** Stop Music Cut For Safety
                 do_action("play")
 
