@@ -19,7 +19,7 @@ import keyboard #pip install keyboard
 folder_path = "./music/1_0_0 - 3pm Playlist"
 
 music_path = "./music/"
-music_file_types = [".mp3",".wav", ".aiff", ".mp4"]
+music_file_types = [".mp3",".wav", ".aiff"]
 video_file_types = [".mp4"]
 config_filename = "player.config"
 #//*** Set Default host IP 
@@ -112,6 +112,7 @@ if os.path.exists(config_filename):
                     
                     print(clear_screen)
 
+music_file_types = music_file_types + video_file_types
 
 def listen_for_digi(input_port):   
     soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -269,6 +270,11 @@ def is_valid_filetype(filename):
             return True
     return False
 
+def is_video_filetype(filename):
+    for file_type in music_file_types:
+        if file_type in filename:
+            return True
+    return False
 
 
 def sort_folder(files):
@@ -474,10 +480,11 @@ def do_action(input_action,input_cut=None):
 
         #//*** Play if we should be playing
         if pc["playing"]:
-            pc["p"].set_fullscreen(True)
+            
             print("start playing")
-            print((pc["p"].video_get_track()))
             pc["p"].play()
+
+
 
 
             #//*** Wait till player indicates playing. Helps with timing
@@ -542,10 +549,9 @@ def do_action(input_action,input_cut=None):
         pc["p"] = vlc.MediaPlayer(track)
 
         pc["p"].audio_set_volume(70)
-        pc["p"].set_fullscreen(True)
+        pc["p"].set_fullscreen(False)
 
         print(dir(pc["p"]))
-
 
         
 
