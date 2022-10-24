@@ -29,7 +29,8 @@ PORTS = [8001]
 
 
 #//*** Clear the Screen on each action. False aids in debugging.
-clear_screen = False
+clear_screen = True
+fullscreen = True
 
 action_queue = []
 pc = {
@@ -270,9 +271,9 @@ def is_valid_filetype(filename):
             return True
     return False
 
-def is_video_filetype(filename):
-    for file_type in music_file_types:
-        if file_type in filename:
+def is_looping_video_filetype(filename):
+    for file_type in video_file_types:
+        if file_type in filename and "[BGL]" in filename:
             return True
     return False
 
@@ -505,6 +506,12 @@ def do_action(input_action,input_cut=None):
 
         #//*** Do Nothing unless it's a playlist Object
         if music_obj["type"] != "playlist":
+
+            #//*** Assign Playing to whether clip is actually playing
+            #//*** Helps with awkwardness of retroing in a playlist 
+            if pc["playing"] != pc["p"].is_playing():
+                pc["playing"] = bool(pc["p"].is_playing())
+                do_action("")
             return
 
         #//*** Add Code to quit on file. Continue if Playlist
@@ -545,6 +552,8 @@ def do_action(input_action,input_cut=None):
 
     if input_action == "load_track":
         track = input_cut
+        """
+        #//*** Load single song into Media Player 
         #//*** Load Song
         pc["p"] = vlc.MediaPlayer(track)
 
@@ -552,8 +561,35 @@ def do_action(input_action,input_cut=None):
         pc["p"].set_fullscreen(False)
 
         print(dir(pc["p"]))
+        """
+        # creating a media player object
+        pc["p"] = vlc.MediaListPlayer()
+        #print(dir(pc["p"]))
 
+        # creating Instance class object
+        player = vlc.Instance()
+          
+        # creating a media list object
+        media_list = vlc.MediaList()
+          
+        # creating a new media
+        media = player.media_new(track)
+          
+        # adding media to media list
+        media_list.add_media(media)
+          
+        # setting media list to the media player
+        pc["p"].set_media_list(media_list)
+        pc["p"].get_media_player().set_fullscreen(fullscreen)
+
+        if is_looping_video_filetype(track):
+            # setting loop
+            pc["p"].set_playback_mode(1)
+        else:
+            pc["p"].set_playback_mode(0)
         
+        # start playing video
+        #media_player.play()
 
     if input_action == "next_track" or input_action == "prev_track":
 
