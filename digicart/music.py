@@ -106,6 +106,14 @@ if os.path.exists(config_filename):
                         print("No music file types specified. Did you forget the period?\n\tExample: .mp3, .wav")
                         sys.exit()
 
+                if key == "video_file_types":
+                    video_file_types = []
+                    for x in value.split(","):
+                        x = x.strip()
+
+                        if "." in x:
+                            video_file_types.append(x)
+
                 if key == "clear_screen":
 
                     if value.lower() == "false":
@@ -267,6 +275,13 @@ def handleInput(raw_data):
 
 def is_valid_filetype(filename):
     for file_type in music_file_types:
+        if file_type in filename:
+            return True
+    return False
+
+def is_video_filetype(filename):
+    for file_type in video_file_types:
+        print(file_type,filename,str(file_type in filename))
         if file_type in filename:
             return True
     return False
@@ -552,6 +567,9 @@ def do_action(input_action,input_cut=None):
 
     if input_action == "load_track":
         track = input_cut
+        print("==================")
+        print(track)
+        print("==================")
         """
         #//*** Load single song into Media Player 
         #//*** Load Song
@@ -562,9 +580,17 @@ def do_action(input_action,input_cut=None):
 
         print(dir(pc["p"]))
         """
-        # creating a media player object
-        pc["p"] = vlc.MediaListPlayer()
-        #print(dir(pc["p"]))
+
+        if "p" not in pc.keys():
+            # creating a media player object
+            pc["p"] = vlc.MediaListPlayer()
+        
+        mp = pc["p"].get_media_player()
+        #print(mp.has_vout(), mp.is_seekable(),mp.get_xwindow())
+        #print( mp.video_get_width(),mp.get_state())
+
+
+
 
         # creating Instance class object
         player = vlc.Instance()
@@ -582,14 +608,15 @@ def do_action(input_action,input_cut=None):
         pc["p"].set_media_list(media_list)
         pc["p"].get_media_player().set_fullscreen(fullscreen)
 
+        #print(dir(pc["p"].get_media_player()))
+        mp = pc["p"].get_media_player()
+        #print(mp.has_vout(), mp.is_seekable(),mp.get_role())
         if is_looping_video_filetype(track):
             # setting loop
             pc["p"].set_playback_mode(1)
         else:
             pc["p"].set_playback_mode(0)
         
-        # start playing video
-        #media_player.play()
 
     if input_action == "next_track" or input_action == "prev_track":
 
@@ -640,20 +667,108 @@ def do_action(input_action,input_cut=None):
                 time.sleep(.01)
 
     if input_action == "DIGI_PLAY":
-        
+
+
         print(f"DIGI_PLAY {input_cut} - {pc['selected_cut']} : {pc['selected_cut'] == input_cut}")
+        
+
+        #//*** Load Cut Different  Handle different cut From What's loaded
+        print(f"Get input_cut Filename {input_cut}  ")
+
+        #//*** Validate Cut Number
+        if input_cut in pc['cut'].keys():
+            
+            #pc["selected_cut"] = input_cut
+
+            #//*** Get the Music Object
+            music_obj = pc['cut'][ input_cut ]
+
+            #//*** Assign New Track
+            #//*** Get the filepath as track
+            selected_index = music_obj["selected"]
+            track = music_obj['track_paths'][selected_index]
+
+
+        #//*** Handle Video Files Separately
+        if is_video_filetype(track):
+
+            #//*** Check if new cut
+            if pc["selected_cut"] != input_cut:
+
+                #//*** Stop Music Cut For Safety
+                do_action("stop")
+
+                ##//*** Load Song
+                do_action("load_track",track)
+                pc["playing"] = False
+
+
+                pc["selected_cut"] = input_cut
+
+                do_action("play")
+                
+                #//*** Skip the Pause if BGL
+                if not is_looping_video_filetype(track):
+                    mp = pc["p"].get_media_player()
+                    while not mp.has_vout():
+                        time.sleep(.01)
+                    #mp.set_position(0)
+                    do_action("pause")
+            else:
+
+                if is_looping_video_filetype(track):
+                    #//*** Hard assign PLAY and play action
+                    pc["playing"] = True
+                    do_action("play")
+                elif not pc["playing"]:
+                    #//*** If Not Playing, Play!
+                    pc["playing"] = True
+                    do_action("play")
+                else:
+                    #//*** Same Clip and Playing. Recue it
+                    #//*** Stop Music Cut For Safety
+                    
+                    print(track)
+
+                    
+
+                    mp = pc["p"].get_media_player()
+                    while mp.has_vout():
+                        time.sleep(.01)
+                        print("Waiting")
+                        pc["p"].stop()
+                    
+
+                    ##//*** Load Song
+                    do_action("load_track",track)
+                    
+
+                    do_action("play")
+
+                    
+                    while not mp.has_vout():
+                        time.sleep(.01)
+                    #mp.set_position(0)
+                    do_action("pause")
+                    pc["playing"] = False
+
+                    
+
+                
+
 
         #//*** Check if selecting currently selected cut
-        if pc["selected_cut"] == input_cut:
+        elif pc["selected_cut"] == input_cut:
 
             #//*** Check if already playing
             if pc["playing"]:
+
 
                 #//*** If Playlist, and Playing, do Nothing. Track list is already playing on repeat
                 #//*** Get the Music Object
                 music_obj = pc['cut'][ pc["selected_cut"] ]
 
-                #//*** Do Nothing unless it's a playlist Object
+                #//*** Do Nothing unless it's ad playlist Object
                 if music_obj["type"] != "playlist":
 
                     #//*** Restart the Currently playing Single Track                    
@@ -661,12 +776,14 @@ def do_action(input_action,input_cut=None):
 
                     pc["playing"] = False
 
+
                     while pc["p"].is_playing():
                         pc["p"].stop()
                         time.sleep(.1)
 
+
                         #//*** Quit BC it's not quite right
-                        
+
 
                         #//*** Play Music Cut
                         do_action("play")
@@ -726,8 +843,16 @@ def do_action(input_action,input_cut=None):
                 track = music_obj['track_paths'][selected_index]
 
 
+                mp = pc["p"].get_media_player()
+
+
                 #//*** Stop Music Cut For Safety
                 do_action("stop")
+
+                while mp.has_vout():
+                    time.sleep(.01)
+                    print("Waiting")
+                    pc["p"].stop()
 
                 #//*** Load Song
                 do_action("load_track",track)
@@ -828,6 +953,8 @@ def do_action(input_action,input_cut=None):
     print(out)
     if len(action_queue) > 0:
         print(action_queue)
+
+
 #//*************************
 #//*** END DO do_action()  
 #//*************************
