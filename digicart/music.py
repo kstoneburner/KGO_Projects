@@ -683,6 +683,8 @@ def do_action(input_action,input_cut=None):
             #//*** Get the Music Object
             music_obj = pc['cut'][ input_cut ]
 
+            print(music_obj)
+
             #//*** Assign New Track
             #//*** Get the filepath as track
             selected_index = music_obj["selected"]
