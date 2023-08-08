@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+<script>console.log("XXX")</script>
+{% block content %}
+    <h1>{% block title %} {{today}} - KGO Rundowns {% endblock %}</h1>
+
+    
+
+    {% for rundown in rundowns %} 
+        <a href="/rundown?rundown_id={{ rundown['id'] }}&rundown_name={{ rundown['name'] }}">
+            <h2>{{ rundown['name'] }} </h2>
+            
+        </a>
+        
+        <hr>
+    {% endfor %}
+
+{% endblock %}

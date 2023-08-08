@@ -43,9 +43,10 @@ def build_rundown_info(rundown_target,date_range,config,cnxn):
     SELECT *
     FROM resourceReservations 
     WHERE startTime BETWEEN {date_range}
-    AND content LIKE '%{rundown_target}%'
+    
     """
     #WHERE stationId = '1132'
+    #AND content LIKE '%{rundown_target}%'
 
      
     #//*** Get List of Rundowns Matching date Range and Rundown Name

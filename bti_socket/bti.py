@@ -1,63 +1,119 @@
-#CLIENT=[command]/[JOBnum]
+#//*** Validate IP Address
+#https://codefather.tech/blog/validate-ip-address-python/
 
+
+#python bti.py 10.218.97.51 4085 START NU105
+#python bti.py 10.218.97.51 4085 STOP NU105,NU106,NU107
  
 
-#CLIENT=JOBSTART/EV6
-
-#CLIENT=JOBPAUSE/EV6
-
-#CLIENT=JOBRESUME/EV6
-
-#CLIENT=JOBSTOP/EV6
-
- 
-
-import socket
-import time
+import socket,time,sys
+import argparse
+import ipaddress
 
 
-def run_crawl (command):
+#HOST = '10.218.97.51' # The server's hostname or IP address
+#PORT = 4085  # The port used by the server
 
-    HOST = '10.218.97.51' # The server's hostname or IP address
-    PORT = 4085  # The port used by the server
+parser = argparse.ArgumentParser(description="Connect to BTI Crawl")
+parser.add_argument('ip', type=str, help="IP Address of BTI Device") 
+parser.add_argument('port', type=str, help="Listening Port on BTI Device") 
+parser.add_argument("START_STOP", type=str, help="[START/STOP] to Start or Stop a Job")
+parser.add_argument("JOB", type=str, help="BTI JOB Value. Separate multiple jobs with a comma.Example: NU105,NU106,NU107")
 
- 
+#parser.add_argument("tank", type=str)
+args = parser.parse_args()
 
- 
 
-    # Open Socket
+#//********************************
+#//********************************
+#//**** INPUT VALIDATION
+#//********************************
+#//********************************
+try:
+    
+    #//*** Validate Ip Address
+    ipaddress.ip_address(args.ip)
+    print("Valid IP address:",args.ip)
+    ip = args.ip
 
-    print('OPening Socket')
+except:
+    print("INVALID IP Address: ", args.ip)
+    sys.exit()
 
- 
 
- 
+try:
+    #//*** Validate Port Value
+    port = int(args.port)
 
-    try:
+    if port >= 1 and port <= 65535:
+        print("Valid Port:",port)
+    else:
+        print("INVALID PORT value",port," -- Value must be betwen 1 - 65535")
+except:
+    print("INVALID PORT Value")
 
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        sock.connect((HOST, PORT))
+action = args.START_STOP.upper()
 
-        sock.settimeout(3)
+#//**************************
+#//*** Validate START STOP
+#//**************************
+if action != "START" and action != "STOP":
+    print("After IP and Port declare START_STOP. Enter START or STOP only!!\nInput Value:",args.START_STOP.upper())
+    sys.exit()
 
-        print('Connected')
+jobs = args.JOB
+print("JOB Value: ",jobs)
 
-    except:
 
-        print ('Connection failed.')
 
-        sock.close()
 
-        return None
+#//********************************
+#//********************************
+#//**** OPEN CONNECTION
+#//********************************
+#//********************************
 
- 
+print('Opening Socket')
 
- 
+try:
 
- 
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
- 
+    sock.connect((ip, port))
+
+    sock.settimeout(3)
+
+    print('Connected')
+
+except:
+
+    print ('Connection failed. Quitting')
+
+    sock.close()
+    sys.exit()
+    
+
+
+#//********************************
+#//********************************
+#//**** BUILD COMMAND
+#//********************************
+#//********************************
+
+#'CLIENT=JOBSTOP/NU105'
+
+for job in jobs.split(","):
+
+    command = f"CLIENT=JOB{action}/{job}"
+    print(command)
+
+
+    #//********************************
+    #//********************************
+    #//**** SEND COMMAND
+    #//********************************
+    #//********************************
 
     try:
 
@@ -68,13 +124,15 @@ def run_crawl (command):
     except:
 
         print('Sending command failed.')
+        sock.close()
+        print ('Closed Socket')
+        sys.exit()
 
- 
-
- 
-
-       
-
+    #//********************************
+    #//********************************
+    #//**** Wait for response
+    #//********************************
+    #//********************************
     try:
 
         print('Listening')
@@ -87,35 +145,22 @@ def run_crawl (command):
 
         print('No Reply.')
 
- 
+time.sleep(1)
+print('Close and Quitting')
+sock.close()
+sys.exit()
 
-        time.sleep(5)
 
- 
 
-       
+#print(parser.parse_args() )
+#print(parser.parse_args(["ip"]) )
 
-    else:
-
-       print('Skipped')
-
- 
 
  
 
-    sock.close()
-
-    print ('Closed Socket')
 
  
 
- 
-
- 
-
- 
-
- 
 
  
 
@@ -125,20 +170,22 @@ def run_crawl (command):
 
  
 
-while True:
+#while True:
 
-    #run_crawl('CLIENT=JOBSTART/NU105')
-    run_crawl('CLIENT=JOBSTOP/NU105')
+#run_crawl('CLIENT=JOBSTART/NU105')
+#time.sleep(1)
+#run_crawl('CLIENT=JOBSTART/NU106')
 
 
-   
 
-    #run_crawl('CLIENT=JOBPAUSE/EV6')
 
-    #run_crawl('CLIENT=JOBRESUME/EV6')
 
-    #run_crawl('CLIENT=JOBSTOP/EV6')
 
-   
 
-    time.sleep(10)      
+#time.sleep(5)      
+
+#input("press ENTER")
+
+#run_crawl('CLIENT=JOBSTOP/NU105')
+#run_crawl('CLIENT=JOBSTOP/NU106')
+#run_crawl('CLIENT=JOBSTOP/NU107')

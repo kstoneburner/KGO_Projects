@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+<script type="text/javascript">console.log("XXX")</script>
+{% block content %}
+    <h1>{{ rp['name'] }} </h1>
+    <table>
+       {% for storyid in rp['storyOrder'] %} 
+            <tr>
+               <td>{{ rp['stories'][storyid]['pageNumber'] }}  </td>
+               <td>{{ rp['stories'][storyid]['title'] }}</td>
+               {% for mosid in rp['stories'][storyid]['mos'] %} 
+                     <td><a href="/video?video_id={{ mosid }}">{{ mosid }}</a></td>
+               {% endfor %}
+
+               
+            </tr>
+            
+        
+        
+    {% endfor %}
+
+
+   </table>
+
+
+{% endblock %}

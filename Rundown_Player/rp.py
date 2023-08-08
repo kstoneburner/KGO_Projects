@@ -88,7 +88,7 @@ config_filename = "rp.config"
 h_name = socket.gethostname()
 HOST = socket.gethostbyname(h_name)
 PORTS = [10522]
-rundown_names = ["6PM Weekday"]
+rundown_names = ["5PM Weekday"]
 playout_paths = ["\\\\om-casf-dlbr06\\MEDIA"]
 
 
@@ -169,7 +169,7 @@ cnxn = pyodbc.connect('Trusted_Connection=yes;DRIVER={SQL Server};SERVER='+confi
 #//*** Start with Shows based on Today Only
 #//*** This *can* and probably will need to scale to future dates.
 
-offset_days = -1
+offset_days = 0
 #//*** Today's date range starts with today's date beginning at 00:00:00 and Tomorrow's Date at 00:00:00
 todayStart = str(date.today() + timedelta(days=offset_days))
 todayEnd = str(date.today() + timedelta(days=offset_days+1))
