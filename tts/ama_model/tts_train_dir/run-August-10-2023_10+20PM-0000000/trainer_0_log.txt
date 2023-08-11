@@ -9,9 +9,11 @@
  | > Torch CUDNN deterministic: False
  | > Torch CUDNN benchmark: False
  | > Torch TF32 MatMul: False
- > Start Tensorboard: tensorboard --logdir=C:\Users\stonk013\KGO_Projects\tts\ama_model\tts_train_dir\run-August-09-2023_10+00PM-0000000
+ > Start Tensorboard: tensorboard --logdir=C:\Users\stonk013\KGO_Projects\tts\ama_model\tts_train_dir\run-August-10-2023_10+20PM-0000000
 
- > Model has 47669492 parameters
+ > Model has 28259417 parameters
 
 [4m[1m > EPOCH: 0/1000[0m
- --> C:\Users\stonk013\KGO_Projects\tts\ama_model\tts_train_dir\run-August-09-2023_10+00PM-0000000
+ --> C:\Users\stonk013\KGO_Projects\tts\ama_model\tts_train_dir\run-August-10-2023_10+20PM-0000000
+
+[1m > TRAINING (2023-08-10 22:20:26) [0m
