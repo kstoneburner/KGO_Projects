@@ -1,0 +1,19 @@
+ > Training Environment:
+ | > Backend: Torch
+ | > Mixed precision: False
+ | > Precision: float32
+ | > Num. of CPUs: 12
+ | > Num. of Torch Threads: 6
+ | > Torch seed: 54321
+ | > Torch CUDNN: True
+ | > Torch CUDNN deterministic: False
+ | > Torch CUDNN benchmark: False
+ | > Torch TF32 MatMul: False
+ > Start Tensorboard: tensorboard --logdir=C:\Users\family\KGO_Projects\tts\ama_model\tts_train_dir\run-August-15-2023_04+03PM-636c914
+
+ > Model has 28259417 parameters
+
+[4m[1m > EPOCH: 0/1000[0m
+ --> C:\Users\family\KGO_Projects\tts\ama_model\tts_train_dir\run-August-15-2023_04+03PM-636c914
+
+[1m > TRAINING (2023-08-15 16:03:23) [0m
