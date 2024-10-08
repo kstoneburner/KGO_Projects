@@ -240,18 +240,35 @@ class widget_builder():
 						#//*** Remove the prepended CC
 						#//*** Split by _ and grab the first field
 						#//*** Convert to int to type match self.banks
+						#tar_bank = int(item.name.split("/")[-1].replace("cc","").split("_")[0])
 						tar_bank = int(item.name.split("/")[-1].replace("cc","").split("_")[0])
+						tar_bank = f"cc{tar_bank}_"
+
 						
 						#//*** If zero based index tar_bank matches zero based index in self.banks we keep sync the file
-						if tar_bank in self.banks:
+						#if tar_bank in self.banks:
+						if tar_bank in self.migrate.keys():
+
+							#//*** Extracting source name
 							print("Extracting " + item.name + " from source Acuity File to working Folder")
 							self.draw_response("Extracting " + item.name + " from source Acuity File to working Folder")
 							sourceCC = srcTar.extractfile(item.name)
-							print("Writing " + item.name + " to Temporary Files")
-							self.draw_response("Writing " + item.name + " to Temporary Files")
-							f = open(tempFolderName + "/"+ item.name,"wb")
+
+							
+							#//*** Generate Replacement file name from migrate destinations
+							replace_name = item.name.replace(tar_bank,self.migrate[tar_bank])
+														
+
+							print("Writing " + replace_name + " to Temporary Files")
+							self.draw_response("Writing " + replace_name + " to Temporary Files")
+
+							
+
+							#//*** Save the file under new Bank Name, by replacing tar_bank with the dest in self.migrate
+							f = open(tempFolderName + "/"+ replace_name,"wb") 
 							f.write(sourceCC.read())
 							f.close()
+							print(f"Need to rename: {item.name}, {tar_bank}")
 		
 		destFilename = export_folder + "merged_"+self.merge_target_filename.split("/")[-1]
 
@@ -273,7 +290,7 @@ class widget_builder():
 				print("Adding: " + filename)
 				self.draw_response("Adding: " + filename)
 		finalTar.close()
-		
+
 		################################################
 		################################################
 		#### File Cleanup
@@ -301,8 +318,11 @@ if __name__ == '__main__':
 
 	config_filename = "settings.config"
 	export_folder = "merged/"
-	banks = []
+	sources = []
+	dests = []
+	migrate = {}
 	tempFolderName = "exaction_temp/"
+	error = False
 
 	tempFolderName = "./" + export_folder + tempFolderName
 
@@ -345,30 +365,82 @@ if __name__ == '__main__':
 	                if key == "HOST":
 	                    HOST = value
 
-	                if key == "banks":
-	                    banks = []
-	                    for x in value.split(","):
-	                        try:
-	                            banks.append( int(x.strip()) )
-	                        except:
-	                            pass
+	                if key == "source":
+	                	sources = []
+	                	if "," in value:
+	                		for x in value.split(","):
+	                			sources.append( int(x.strip()) )
+	                	else:
+	                		sources.append(value.strip())
+                		
+	                if key == "dest":
+	                	dests = []
+	                	print(key,value.strip())
+	                	if "," in value:
+	                		for x in value.split(","):
+	                			dests.append( int(x.strip()) )
+	                	else:
+	                		dests.append(value.strip())
+
+
 	else:
 		print("Configuration File Missing: player.config")
 		print("Quitting")
 		sys.exit()
 
 	bank_msg = "Merging Custom Control Bank(s): "
-	for bank in banks:
-		bank_msg += f"{bank},"
+
+	src_msg = " sources= "
+	for source in sources:
+		src_msg += f"{source},"
+
+	dst_msg = " dests= "
+	for dest in dests:
+		dst_msg += f"{dest},"	
 
 	bank_msg = bank_msg[:-1]
-	#//*** Convert banks to Zero based indexes
-	for x in range(len(banks)):
-		banks[x] = int(banks[x])-1
-	
+	src_msg = src_msg[:-1]
+	dst_msg = dst_msg[:-1]
 
-	#//*** Assign zero based banks to wb class
-	wb.banks = banks
+	bank_msg += f"{src_msg}{dst_msg}"
+
+
+	#//*** Convert sources to Zero based indexes
+	for x in range(len(sources)):
+		sources[x] = int(sources[x])-1
+	
+	#//*** Convert dests to Zero based indexes
+	for x in range(len(dests)):
+		dests[x] = int(dests[x])-1
+
+	#//*** Validate Sources and Dests
+	if len(sources) == 0:
+		print("ERROR: No Sources Defined, Add some source Bank Numbers")
+		error = True
+
+	if len(dests) == 0:
+		print("ERROR: No Destination Banks Defined, Add some Destination Bank Numbers")
+		error = True
+
+	if len(sources) != len(dests):
+		print("ERROR: The number of Sources abd Destinations must match:")
+		print(f"Sources:     {sources}")
+		print(f"Destination: {dests}")
+		error = True
+	
+	if error:
+		print("QUITTING on ERROR")
+		sys.exit()
+
+	#//*** Combine Sources and Destinations in a migration dictionary
+	for x in range(len(dests)):
+		migrate[ f"cc{sources[x]}_" ] = f"cc{dests[x]}_"
+
+	print(f"migrate: {migrate}")
+
+	#//*** Assign zero based migrate dictionary to wb class
+	
+	wb.migrate = migrate
 
 	#//*** Load each widget into the gui
 	for widget in widgets:

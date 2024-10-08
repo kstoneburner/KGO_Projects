@@ -219,28 +219,109 @@ def capture_keystroke_threaded():
 def handleInput(raw_data):
 
 
-    if len(raw_data) < 17:
-        return
-    
-    play = [8, 160, 80 ]
-    stop = [2, 160, 108 ]
-    pause = [3, 160, 64]
-    
-    #//*** raw_data is a Binary Array
-    #//*** Convert each Binary bit to an integer
+    #//*** Convert the raw_data Byte Sequence to an Integer array
     data = []
     for x in raw_data:
         #print(int(x),str(x),chr(x))
         data.append(int(x))
+
+        
+    #//*** Every Other Message from Caprica is this sequence
+    #//*** Skip it For now
+    ignore_msg_caprica = [255, 250, 44, 5, 5, 255, 240, 255, 250, 44, 5, 6, 255, 240]
+    ignore_msg_acuity  = [255, 251, 44, 255, 250, 44, 5, 8, 255, 240, 255, 250, 44, 5, 11, 255, 240]
+     
+
+    if data == ignore_msg_caprica:
+        #print("Caprica Ignore Message Received: Skipping")
+        return
+
+    if data == ignore_msg_acuity:
+        #print("Acuity Ignore Message Received: Skipping")
+        return
+
+    #print("handleInput:",raw_data)
+    #print("Len:",len(raw_data))
+    #print(data)
+    #print(len(data))
+
+    play = [8, 160, 80 ]
+    stop = [2, 160, 108 ]
+    pause = [3, 160, 64]
+
+    caprica_header = [130,130,2]
+    acuity_header = [255,250,44]
+
+    header_types = {
+            "caprica" : caprica_header,
+            "acuity" : acuity_header, 
+    }
+
+    #//*** Need at least 6 digits to make this work
+    if len(data) < 6:
+        print("IGNORE MESSAGE: Less than 6 bytes. ")
+        return
+
+    data_type = None
+    data_header = data[:3]
+
+    if data_header in header_types.values():
+
+        for key,value in header_types.items():
+            if value == data_header:
+                data_type = key
+
+
+    else:
+        print("IGNORE: Unknown Header Type.", data_header)
+
+    #print("Data Type: ", data_type)
+
+
+    #//*** None Command is a control. Quit If this doesn't get assigned
+    command = None
     
-    #//*** Strip first 17 characters, these are consistent values
-    data = data[17:]
-    print(data,data[:3])
-    
-    #//*** First 3 elements dictate the command
-    command = data[:3]
+    if data_type == None:
+        #//*** This should NEVER run, leaving it here as a failsafe
+        print("IGNORE: Data_Type is None. This should never be seen!!!")
+        print("Message is neither Caprica or Acuity formatted")
+        return
+
+    if data_type == "caprica":
+        if len(data) < 6:
+            #print("Caprica Data Packet too Short. Quitting!!!")
+            return
+        
+        #//*** Strip first 3 characters, these are consistent values
+        data = data[3:]
+        #//*** First 3 elements dictate the command
+        command = data[:3]
+        #print("Data:",command,data)
+
     
 
+    if data_type == "acuity":
+        
+        #//*** Acuity Message, 
+        #//*** Message should be greater than 17 characters
+        if len(raw_data) < 17:
+            print("Acuity message too Short. Quittin!!!!")
+            return
+    
+        #//*** Strip first 17 characters, these are consistent values
+        data = data[17:]
+
+        #print("Data:",data,data[:3])
+        
+        #//*** First 3 elements dictate the command
+        command = data[:3]
+
+        
+    
+    #print("Command:",command)
+    if command == None:
+        print("IGNORE: No Command Assigned: handleInput()")
+        return
     if command == play:
         
         #//*** Get the Values of Clip to Play
@@ -669,11 +750,13 @@ def do_action(input_action,input_cut=None):
     if input_action == "DIGI_PLAY":
 
 
-        print(f"DIGI_PLAY {input_cut} - {pc['selected_cut']} : {pc['selected_cut'] == input_cut}")
+        #print(f"DIGI_PLAY {input_cut} - {pc['selected_cut']} : {pc['selected_cut'] == input_cut}")
         
 
         #//*** Load Cut Different  Handle different cut From What's loaded
-        print(f"Get input_cut Filename {input_cut}  ")
+        #print(f"Get input_cut Filename {input_cut}  ")
+
+
 
         #//*** Validate Cut Number
         if input_cut in pc['cut'].keys():
@@ -689,8 +772,12 @@ def do_action(input_action,input_cut=None):
             #//*** Get the filepath as track
             selected_index = music_obj["selected"]
             track = music_obj['track_paths'][selected_index]
+        else:
+            print("Cut:",input_cut, "Not Found SKIPPING")
+            return
 
 
+        
         #//*** Handle Video Files Separately
         if is_video_filetype(track):
 
