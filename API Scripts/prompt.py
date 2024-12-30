@@ -40,6 +40,7 @@ from requests_oauthlib import OAuth2Session
 
 
 g = {
+    "actions" : [], #//**** Used as an action queue. Actions are queued and triggered in order. The idea is to wait until an action is finished before starting the next.
     "quit" : False,
     "api_root" : "/api/v1/",
     "token" : None,
@@ -196,11 +197,14 @@ def start_listener(input_host, input_port):
                 data = data[:-2]
 
             
-            print(f"Received: {data}")
+            print(f"Received + Queued: {data}")
+            #//*** Queue the action as a tuple, storing data and connection
+            g["actions"].append((data,conn))
  
-            action = handleInput(data)
+            #//*** Moved Action Handling to the Main Loop
+            #action = handleInput(data)
 
-            handleAction(action,data,conn)
+            #handleAction(action,data,conn)
 
             #print("HandleInput: "+)
 
@@ -742,7 +746,8 @@ def handleAction(action,input_data,conn):
         password = g['dalet']['password']
 
         try:
-            cnxn = pyodbc.connect('Trusted_Connection=yes;DRIVER={SQL Server};SERVER='+server+';DATABASE='+database+';UID='+username+';PWD='+ password)
+            #cnxn = pyodbc.connect('Trusted_Connection=yes;DRIVER={SQL Server};SERVER='+server+';DATABASE='+database+';UID='+username+';PWD='+ password)
+            cnxn = pyodbc.connect('Trusted_Connection=yes;DRIVER={SQL Server};SERVER='+server+';DATABASE='+database+';')
             cursor = cnxn.cursor()
         except:
             print("Trouble Connecting to the Daletdase:")
@@ -968,7 +973,7 @@ def handleAction(action,input_data,conn):
 
         response.close()
 
-        response = requests.get(f"{pair_url}/peers", headers=headers, verify=False)
+        response = requests.get(f"{pair_url}", headers=headers, verify=False)
 
         print("====================")
         print(response)
@@ -1005,7 +1010,7 @@ def load_configfile():
     config = configparser.ConfigParser()
     config.read('config.ini')
 
-    int_vals = ["prompt_port", "listen_port"]
+    int_vals = ["prompt_port"]
     
     #//*** Add All Main values to G
     for key in config["Main"]:        
@@ -1016,6 +1021,19 @@ def load_configfile():
             g[key] = int(value)
         else:
             g[key] = str(value)
+
+        #//*** Convert comma separated ports into a list
+        if key == "listen_port":
+
+            value = value.split(",")
+
+            ports = []
+
+            for port in value:
+                ports.append(int(port))
+
+            g[key] = ports
+
 
     #//*** Load PCR FloorDirector Endpoints
 
@@ -1104,11 +1122,15 @@ if __name__ == '__main__':
 
     #//*** Loop through each address and start listener
     for address in addresslist:
-        print(f"Starting Listener: {address}:{g['listen_port']}" )
-        #//*** Start RossTalk Listener as thread
-        listener = threading.Thread(target = start_listener, args=[address, g["listen_port"]])
-        listener.daemon = True
-        listener.start()
+
+        #//*** Mount Each Port on each address
+
+        for port in g['listen_port']:
+            print(f"Starting Listener: {address}:{port}" )
+            #//*** Start RossTalk Listener as thread
+            listener = threading.Thread(target = start_listener, args=[address, port])
+            listener.daemon = True
+            listener.start()
 
     print(pyodbc.drivers())
 
@@ -1120,6 +1142,20 @@ if __name__ == '__main__':
     #//*******************************************************************************************************************************
     while True:
         time.sleep(.01)
+
+        
+
+        if len(g['actions']) > 0:
+
+            print(f"Actions: {len(g['actions'])}" )
+            
+            #//*** Remove First Item from g['actions'] 
+            data,conn = g['actions'].pop()
+
+            action = handleInput(data)
+
+            handleAction(action,data,conn)
+
         
 
         if g["quit"]:
