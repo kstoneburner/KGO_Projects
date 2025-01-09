@@ -39,6 +39,7 @@ import streamlit as st
 import time, sys
 
 model_type = "llama3.2"
+model_type = "mixtral"
 
 print("Hola!")
 
@@ -73,9 +74,9 @@ print("")
 # Now we can load the persisted database from disk, and use it as normal. 
 # Remember to choose the same embedding model as before.
 ###########################################################################################################
-vectorstore = Chroma(persist_directory=persist_directory,
-                  embedding_function=OllamaEmbeddings(model=model_type)
-                  )
+#vectorstore = Chroma(persist_directory=persist_directory,
+#                  embedding_function=OllamaEmbeddings(model=model_type)
+#                  )
 
 ###########################################################################################################
 # Now initialize the llm and create a retriever
@@ -108,23 +109,29 @@ all_splits = text_splitter.split_documents(data)
 
 print("Create VectorStore")
 
-persist_directory = 'jj'
+persist_directory = 'kk'
 
+#//*** Write to Diskdescribe ross dashboard
 vectorstore = Chroma.from_documents(
     documents=all_splits, embedding=OllamaEmbeddings(model=model_type),persist_directory=persist_directory)
 
-vectorstore.persist()
+#vectorstore.persist()
 
 #//*** Quiting with a Cached Vector...Hopefully
-sys.exit()
+#sys.exit()
 # Create and persist the vector store
 st.session_state.vectorstore = Chroma.from_documents(
     documents=all_splits,
-    embedding=OllamaEmbeddings(model="llama3.2")
+    embedding=OllamaEmbeddings(model=model_type),
+    persist_directory=persist_directory
 )
-
+vectorstore = Chroma.from_documents(
+    documents=all_splits,
+    embedding=OllamaEmbeddings(model=model_type),
+    persist_directory=persist_directory
+)
 print("VectorStore Persist")
-st.session_state.vectorstore.persist()
+#st.session_state.vectorstore.persist()
 
 print("Moving On....")
 
