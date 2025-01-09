@@ -38,6 +38,8 @@ import streamlit as st
 
 import time, sys
 
+model_type = "llama3.2"
+
 print("Hola!")
 
 
@@ -72,14 +74,14 @@ print("")
 # Remember to choose the same embedding model as before.
 ###########################################################################################################
 vectorstore = Chroma(persist_directory=persist_directory,
-                  embedding_function=OllamaEmbeddings(model="llama3.2")
+                  embedding_function=OllamaEmbeddings(model=model_type)
                   )
 
 ###########################################################################################################
 # Now initialize the llm and create a retriever
 ###########################################################################################################
 #llm = OllamaLLM(base_url="http://localhost:11434",
-#                                  model="llama3.2",
+#                                  model=model_type,
 #                                  verbose=True,
 #                                  callback_manager=CallbackManager(
 #                                      [StreamingStdOutCallbackHandler()])
@@ -100,15 +102,31 @@ text_splitter = RecursiveCharacterTextSplitter(
     chunk_overlap=200,
     length_function=len
 )
+
+print("Splitting Document")
 all_splits = text_splitter.split_documents(data)
 
+print("Create VectorStore")
+
+persist_directory = 'jj'
+
+vectorstore = Chroma.from_documents(
+    documents=all_splits, embedding=OllamaEmbeddings(model=model_type),persist_directory=persist_directory)
+
+vectorstore.persist()
+
+#//*** Quiting with a Cached Vector...Hopefully
+sys.exit()
 # Create and persist the vector store
 st.session_state.vectorstore = Chroma.from_documents(
     documents=all_splits,
     embedding=OllamaEmbeddings(model="llama3.2")
 )
+
+print("VectorStore Persist")
 st.session_state.vectorstore.persist()
 
+print("Moving On....")
 
 if 'retriever' not in st.session_state:
 	st.session_state.retriever = vectorstore.as_retriever()
