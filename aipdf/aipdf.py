@@ -38,8 +38,9 @@ import streamlit as st
 
 import time, sys
 
-model_type = "llama3.2"
+
 model_type = "mixtral"
+model_type = "llama3.2"
 
 print("Hola!")
 
@@ -91,46 +92,54 @@ print("")
 #retriever = vectorstore.as_retriever()
 
 #uploaded_file = st.file_uploader("DashBoard_CustomPanel_Development_Guide_(8351DR-007).pdf", type='pdf')
+process_pdf = False
 
-print("Tokenizing PDF")
-loader = PyPDFLoader("DashBoard_CustomPanel_Development_Guide_(8351DR-007).pdf")
-data = loader.load()
+if process_pdf:
+    print("Tokenizing PDF")
+    loader = PyPDFLoader("DashBoard_CustomPanel_Development_Guide_(8351DR-007).pdf")
+    data = loader.load()
 
-print("Vectorizing PDF")
-# Initialize text splitter
-text_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=1500,
-    chunk_overlap=200,
-    length_function=len
-)
+    print("Vectorizing PDF")
+    # Initialize text splitter
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1500,
+        chunk_overlap=200,
+        length_function=len
+    )
 
-print("Splitting Document")
-all_splits = text_splitter.split_documents(data)
+    print("Splitting Document")
+    all_splits = text_splitter.split_documents(data)
 
-print("Create VectorStore")
+    print("Create VectorStore")
 
-persist_directory = 'kk'
+    #//*** Write to Diskdescribe ross dashboard
+    vectorstore = Chroma.from_documents(
+        documents=all_splits, embedding=OllamaEmbeddings(model=model_type),persist_directory=persist_directory)
 
-#//*** Write to Diskdescribe ross dashboard
-vectorstore = Chroma.from_documents(
-    documents=all_splits, embedding=OllamaEmbeddings(model=model_type),persist_directory=persist_directory)
 
 #vectorstore.persist()
 
 #//*** Quiting with a Cached Vector...Hopefully
 #sys.exit()
+
 # Create and persist the vector store
+# Load VectorStore from Disk
+
+print("Loading Session State:")
 st.session_state.vectorstore = Chroma.from_documents(
-    documents=all_splits,
+    #documents=all_splits,
     embedding=OllamaEmbeddings(model=model_type),
     persist_directory=persist_directory
 )
+
+print("Loading Vectorstor")
 vectorstore = Chroma.from_documents(
-    documents=all_splits,
+    #documents=all_splits,
     embedding=OllamaEmbeddings(model=model_type),
     persist_directory=persist_directory
 )
-print("VectorStore Persist")
+
+#print("VectorStore Persist")
 #st.session_state.vectorstore.persist()
 
 print("Moving On....")
