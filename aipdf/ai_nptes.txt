@@ -1,0 +1,79 @@
+First, you would need to install the required libraries:
+
+```python
+!pip install google-cloud-language nltk pandas ollama-client
+```
+
+Next, you would need to load the text from your PDF file:
+
+```python
+import pdfplumber
+
+with pdfplumber.open("path/to/your/pdf.pdf") as pdf:
+    text = ""
+    for page in pdf.pages:
+        text += page.extract_text()
+```
+
+Then, you would need to define a function that can analyze the text and extract relevant information:
+
+```python
+from google.cloud import language_v1
+import nltk
+
+nltk.download("punkt")
+
+def analyze_text(text):
+    document = {"content": text, "type_": "PLAIN_TEXT"}
+
+    response = client.analyze_entities(request={'document': document})
+
+    return response.entities
+
+def get_relevant_sentences(text, entities):
+    entity_mentions = []
+
+    for entity in entities:
+        # Check if the entity is mentioned in the text
+        if entity.name in text:
+            start_index = text.find(entity.name)
+            end_index = start_index + len(entity.name)
+
+            # Extract relevant sentences using NLP techniques
+            sentences = text[start_index:end_index]
+            for sentence in nltk.sent_tokenize(sentences):
+                if any(keyword in sentence for keyword in entity.mentions):
+                    entity_mentions.append(sentence)
+
+    return entity_mentions
+```
+
+Finally, you would need to implement the chatbot function:
+
+```python
+def chatbot(question, pdf_text):
+    entities = analyze_text(question + " " + pdf_text)
+    relevant_sentences = get_relevant_sentences(pdf_text, entities)
+
+    # Answer the question using relevant sentences
+    answer = relevant_sentences[0]
+
+    return answer
+```
+
+With these functions in place, you could then use them to continuously prompt the user for questions and provide
+answers:
+
+```python
+while True:
+    question = input("What would you like to know? ")
+    if question == "exit":
+        break
+    else:
+        answer = chatbot(question, text)
+        print("Answer:", answer)
+```
+
+This is just a basic example, and there are many ways you could modify or expand upon it to suit your needs. For
+instance, you could use natural language processing techniques to improve the accuracy of the answers, or add
+additional functionality to let the chatbot browse through different sections of the PDF text based on user input.
