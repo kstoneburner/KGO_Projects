@@ -7,6 +7,8 @@
 #//*** \\om-casf-kgofs01\Public\Apps\Autoscript
 #//***************************************************************4
 
+#Logging Tutorial: https://realpython.com/python-logging/#starting-with-pythons-logging-module
+#Powershell Live monitor Log: Get-Content someFile.txt -wait
 
 #//*** The Login tht accesses Dalet ust have elevated privledges. Sufficient to access the database.
 
@@ -14,9 +16,10 @@
 #// pyinstaller --onefile prompt.py -n kgo_rosstalk_prompt
 
 
-import requests, configparser, pyodbc, re, socket
+import requests, configparser, pyodbc, re, socket, logging
 from urllib3.exceptions import InsecureRequestWarning
- 
+from logging.handlers import RotatingFileHandler
+
 # Suppress the warnings from urllib3
 requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
 
@@ -38,7 +41,9 @@ from oauthlib.oauth2 import LegacyApplicationClient
 
 from requests_oauthlib import OAuth2Session
 
+logger = None #//*** defining for Global Scope
 
+#RotatingFileHandler(filename, maxBytes=10*1024*1024, backupCount=5)
 g = {
     "actions" : [], #//**** Used as an action queue. Actions are queued and triggered in order. The idea is to wait until an action is finished before starting the next.
     "quit" : False,
@@ -198,6 +203,9 @@ def start_listener(input_host, input_port):
 
             
             print(f"Received + Queued: {data}")
+
+            logger.debug(f"RECEIVE:{HOST}:{PORT} - [{data}]")
+
             #//*** Queue the action as a tuple, storing data and connection
             g["actions"].append((data,conn))
  
@@ -356,7 +364,8 @@ def handleAction(action,input_data,conn):
 
         validateToken()
 
-    except:
+    except Exception as Argument:
+        logger.exception(f"Error in ValidateToken. Trouble Connecting to: {url}. Is the Automation Service Running on the Prompter?")
         print(f"Trouble Connecting to: {url}")
         print("Is the Automation Service running on the Prompter?")
         print("Settings --> Automation Interface --> START")
@@ -386,7 +395,15 @@ def handleAction(action,input_data,conn):
         #//*** Build POST Parameter using PassThru Value
         parameters = { "name" : input_data }
 
-        response = requests.post(f"{api_url}/commands", headers=headers, verify=False, json = parameters)
+        try:
+            response = requests.post(f"{api_url}/commands", headers=headers, verify=False, json = parameters)
+
+        except Exception as Argument:
+            logger.exception(f"Trouble Connecting to: {url}.")
+            print(f"Trouble Connecting to: {url}")
+            print("QUITTING ACTION")
+            return
+
         
 
         #//*** Returning Response Values, Currently Not Working
@@ -413,7 +430,8 @@ def handleAction(action,input_data,conn):
             print(pcr_url)
             try:
                 response = requests.get(pcr_url)
-            except:
+            except Exception as Argument:
+                logger.exception("Cannot Connect to: "+pcr_url)
                 print("Cannot Connect to: "+pcr_url)
                 return
             response_obj = response.json()
@@ -528,7 +546,8 @@ def handleAction(action,input_data,conn):
                 print("Need to Pass a PCR value after JUMP_TO_PCR")
                 print(f"Curent Valid PCRs are: {g['load_pcr'].keys()}")
                 return
-            except:
+            except Exception as Argument:
+                logger.exception(f"PARAMETER Error in JUMP_TO_PCR. Are PCR values defined in Config.ini?")
                 print("PARAMETER Error in JUMP_TO_PCR. Are PCR values defined in Config.ini?")
 
         cue_type = 'PGM'
@@ -579,7 +598,8 @@ def handleAction(action,input_data,conn):
         #//********************************************************
         try:
             response = requests.get(pcr_url)
-        except:
+        except Exception as Argument:
+            logger.exception(f"Cannot Connect to: {pcr_url}")
             print("Cannot Connect to: "+pcr_url)
             return
         response_obj = response.json()
@@ -611,7 +631,8 @@ def handleAction(action,input_data,conn):
         print(pcr_url)
         try:
             response = requests.get(pcr_url)
-        except:
+        except Exception as Argument:
+            logger.exception(f"Cannot Connect to {pcr_url}")
             print("Cannot Connect to: "+pcr_url)
             return
 
@@ -633,7 +654,8 @@ def handleAction(action,input_data,conn):
 
             status['od_rundown_name'] = response_obj['info']['playingRundownName']
 
-        except:
+        except Exception as Argument:
+            logger.exception(f"Trouble Parsing PCR Active Show Response: Quitting ACTION")
             print("Trouble Parsing PCR Active Show Response: Quitting ACTION")
             return
 
@@ -641,7 +663,8 @@ def handleAction(action,input_data,conn):
 
             status['od_client_name'] = response_obj['info']['controllingRcClient']
 
-        except:
+        except Exception as Argument:
+            logger.exception(f"Trouble Parsing PCR client Name in response: Quitting ACTION")
             print("Trouble Parsing PCR client Name in response: Quitting ACTION")
             return
 
@@ -749,7 +772,8 @@ def handleAction(action,input_data,conn):
             #cnxn = pyodbc.connect('Trusted_Connection=yes;DRIVER={SQL Server};SERVER='+server+';DATABASE='+database+';UID='+username+';PWD='+ password)
             cnxn = pyodbc.connect('Trusted_Connection=yes;DRIVER={SQL Server};SERVER='+server+';DATABASE='+database+';')
             cursor = cnxn.cursor()
-        except:
+        except Exception as Argument:
+            logger.exception(f"Trouble Connecting to the Daletdase. Server: {server} - database: {database}")
             print("Trouble Connecting to the Daletdase:")
             print("Using the values:")
             print(f"server: {server}")
@@ -1043,7 +1067,8 @@ def load_configfile():
     
     try:
         fd_info_endpoint = config["Floor Director"]["info_endpoint"]
-    except:
+    except Exception as Argument:
+        logger.exception("Using default Floor Director Info Endpoint: /server/floordirector/api/v1/info?")
         print("Using default Floor Director Info Endpoint: /server/floordirector/api/v1/info?")
         print("Custom endpoints can be defined in config.ini")
         print("Section: [Floor Director]")
@@ -1052,7 +1077,8 @@ def load_configfile():
 
     try:
         fd_shots_endpoint = config["Floor Director"]["shots_endpoint"]
-    except:
+    except Exception as Argument:
+        logger.exception("Using default Floor Director Shots Endpoint: /server/floordirector/api/v1/shots?")
         print("Using default Floor Director Shots Endpoint: /server/floordirector/api/v1/shots?")
         print("Custom endpoints can be defined in config.ini")
         print("Section: [Floor Director]")
@@ -1097,6 +1123,28 @@ def load_configfile():
 #//*************************************
 
 if __name__ == '__main__':
+
+    #//**** START Logging
+    logger = logging.getLogger(__name__)
+    logger.setLevel('DEBUG')
+    #file_handler = logging.FileHandler("prompt.log", mode="a", encoding="utf-8")
+    
+    #//*** 5mb Rotating Log File with 5 backups. We should catch everything in 25mb
+    file_handler = RotatingFileHandler("prompt.log", mode="a", encoding="utf-8", maxBytes=5*1024*1024, backupCount=5)
+    formatter = logging.Formatter(
+        "{asctime} - {levelname} - {message}",
+        style="{",
+        datefmt="%Y-%m-%d %H:%M",
+        )
+
+    file_handler.setLevel('DEBUG')
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+    
+    logger.info("System START")
+    
+    #//**** END Logging
+
     load_configfile() 
 
     #//*** Get the Active Window name. Used to Capture Keystrokes only if window is active
@@ -1152,9 +1200,19 @@ if __name__ == '__main__':
             #//*** Remove First Item from g['actions'] 
             data,conn = g['actions'].pop()
 
-            action = handleInput(data)
+            logger.debug(f"HandleInput:{data}")
+            try:
+                action = handleInput(data)
+            except Exception as Argument:
+                logger.exception(f"Trouble with HandleInput:{data}")
 
-            handleAction(action,data,conn)
+            logger.debug(f"handleAction:{data}")
+
+            try:
+                handleAction(action,data,conn)
+            except Exception as Argument:
+                logger.exception(f"Trouble with handleAction:{action} - {data}")
+
 
         
 
