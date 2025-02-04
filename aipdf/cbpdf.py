@@ -4,11 +4,59 @@
 #ollama prompt: using python, how would I generate an ollama chatbot to query a pdf using a RAG
 # https://ollama.com/blog/embedding-models
 # https://blog.gptdevs.net/creating-advanced-retrieval-augmented-generation-rag-systems-using-ollama-and-embedding-models
+# Search: https://duckduckgo.com/?t=ffab&q=ollama+generate+text+embeddings&ia=web
+# Search: https://duckduckgo.com/?q=ollama+rag+persistent&t=ffab&ia=web
+#https://apidog.com/blog/rag-deepseek-r1-ollama/
+#https://medium.com/rahasak/build-rag-application-using-a-llm-running-on-local-computer-with-ollama-and-langchain-e6513853fda0
+#https://how.wtf/how-to-use-chroma-db-step-by-step-guide.html
 
-import pdfplumber, os, re
+
+import pdfplumber, os, re, sys
 import ollama,chromadb
 
+from langchain_community.document_loaders import PDFPlumberLoader
+from langchain_experimental.text_splitter import SemanticChunker  
+from langchain_community.embeddings import HuggingFaceEmbeddings  
+from langchain_community.vectorstores import FAISS  
+from langchain_community.llms import Ollama  
+
+#//*** Global Settings
+g = {
+	"path" : {
+		"chroma" : "persistent_document_db",
+		"pdf" : "./pdf"
+	}
+}#//*** END global Settings
+
 file_path = "DashBoard_CustomPanel_Development_Guide_(8351DR-007).pdf"
+collection_name = file_path.split(".")[0]
+print(collection_name)
+
+#//*** Spin up Chroma DB interfcae
+#client = chromadb.Client() #<---  Memory only Client
+client = chromadb.PersistentClient(path="pdfs") # <--- Save Documents to Disk
+#collection = client.create_collection(name="docs")
+#collection = client.get_or_create_collection(name="collection_name")
+
+#results = collection.get()
+
+print(client.list_collections())
+
+# Load PDF text  
+print("Begin Loader")
+loader = PDFPlumberLoader(file_path)  
+print("Begin Docs")
+docs = loader.load()  
+
+# Split text into semantic chunks  
+text_splitter = SemanticChunker(HuggingFaceEmbeddings())  
+
+documents = text_splitter.split_documents(docs)
+
+print(documents)
+sys.exit()
+
+
 
 text_pages = []
 with pdfplumber.open(file_path,unicode_norm="NFC") as pdf:
@@ -26,8 +74,8 @@ with pdfplumber.open(file_path,unicode_norm="NFC") as pdf:
 
 
 
-client = chromadb.Client()
-collection = client.create_collection(name="docs")
+
+
 
 
 documents = text_pages
@@ -75,3 +123,4 @@ output = ollama.generate(
 )
 
 print(output['response'])
+sys.exit()
