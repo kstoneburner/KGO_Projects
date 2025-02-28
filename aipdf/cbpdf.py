@@ -1,5 +1,9 @@
 #https://geniusdatascience.blogspot.com/2024/11/step-by-step-pdf-chatbots-with-langchain-and-ollama.html
 #pip install langchain pymupdf huggingface-hub faiss-cpu sentence-transformers
+#pip install --user langchain langchain-openai langchain-community langchain-chroma langchain-ollama streamlit pypdf chromadb pymupdf huggingface-hub faiss-cpu sentence-transformers pdfplumber langchain_experimental
+#pip install -U langchain-huggingface
+#pip install -U langchain_experimental langchain_openai
+
 
 #ollama prompt: using python, how would I generate an ollama chatbot to query a pdf using a RAG
 # https://ollama.com/blog/embedding-models
@@ -10,13 +14,21 @@
 #https://medium.com/rahasak/build-rag-application-using-a-llm-running-on-local-computer-with-ollama-and-langchain-e6513853fda0
 #https://how.wtf/how-to-use-chroma-db-step-by-step-guide.html
 
+#//*** Lanchain Semantic Chunker (vs HuggingFace Chunker)
+#//*** https://python.langchain.com/docs/how_to/semantic-chunker/
+
+#semantic Chunker Description and Types
+#//*** https://medium.com/the-ai-forum/semantic-chunking-for-rag-f4733025d5f5
 
 import pdfplumber, os, re, sys
 import ollama,chromadb
 
 from langchain_community.document_loaders import PDFPlumberLoader
 from langchain_experimental.text_splitter import SemanticChunker  
-from langchain_community.embeddings import HuggingFaceEmbeddings  
+#from langchain_community.embeddings import HuggingFaceEmbeddings 
+#from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_openai.embeddings import OpenAIEmbeddings
+
 from langchain_community.vectorstores import FAISS  
 from langchain_community.llms import Ollama  
 
@@ -48,8 +60,12 @@ loader = PDFPlumberLoader(file_path)
 print("Begin Docs")
 docs = loader.load()  
 
+################################################
+# KGO has issue with HuggingFace as a source.
+################################################
 # Split text into semantic chunks  
-text_splitter = SemanticChunker(HuggingFaceEmbeddings())  
+# text_splitter = SemanticChunker(HuggingFaceEmbeddings())  
+text_splitter = SemanticChunker(OpenAIEmbeddings())
 
 documents = text_splitter.split_documents(docs)
 
