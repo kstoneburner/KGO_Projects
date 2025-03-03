@@ -18,13 +18,18 @@
 #//*** https://python.langchain.com/docs/how_to/semantic-chunker/
 
 #semantic Chunker Description and Types
+#//*** Semantic Chunking is the ideal form of chunking the data for Embeddings
+#//*** That Requires Hugging Face Access or OpenAI Access.
+#//*** Going with Recursive Chunking for now. Proper chunking helps to preserve the contextual
+#//***
 #//*** https://medium.com/the-ai-forum/semantic-chunking-for-rag-f4733025d5f5
 
 import pdfplumber, os, re, sys
 import ollama,chromadb
 
 from langchain_community.document_loaders import PDFPlumberLoader
-from langchain_experimental.text_splitter import SemanticChunker  
+from langchain_experimental.text_splitter import SemanticChunker
+from langchain.text_splitter import RecursiveCharacterTextSplitter  
 #from langchain_community.embeddings import HuggingFaceEmbeddings 
 #from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_openai.embeddings import OpenAIEmbeddings
@@ -65,15 +70,34 @@ docs = loader.load()
 ################################################
 # Split text into semantic chunks  
 # text_splitter = SemanticChunker(HuggingFaceEmbeddings())  
-text_splitter = SemanticChunker(OpenAIEmbeddings())
+
+# OpenAI requires an API Key
+#text_splitter = SemanticChunker(OpenAIEmbeddings())
+
+
+#print(documents)
+
+text_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=1000,
+    chunk_overlap=0,
+    length_function=len,
+    is_separator_regex=False
+)
 
 documents = text_splitter.split_documents(docs)
 
-print(documents)
+naive_chunks = text_splitter.split_documents(documents)
+
+#//*** This Section displays the Text chunks. It kind of keeps the sentences together. It's definitely
+#//*** Naive
+#for chunk in naive_chunks:
+#  print(chunk.page_content+ "\n")
+
+
+
+
+
 sys.exit()
-
-
-
 text_pages = []
 with pdfplumber.open(file_path,unicode_norm="NFC") as pdf:
 	for page in pdf.pages:
@@ -84,9 +108,10 @@ with pdfplumber.open(file_path,unicode_norm="NFC") as pdf:
 		decoded_line = re.sub("0x....\\W"," ", decoded_line)
 		text_pages.append( decoded_line )
 
-#for page in text_pages:
-#	print("===================")
-#	print(page)
+for page in text_pages:
+	print("===================")
+	print(page)
+
 
 
 
