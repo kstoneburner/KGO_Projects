@@ -59,11 +59,17 @@ client = chromadb.PersistentClient(path="pdfs") # <--- Save Documents to Disk
 
 print(client.list_collections())
 
+############################################################
+# Loads PDF into Plain Text Array. Separated by each page
+############################################################
 # Load PDF text  
 print("Begin Loader")
 loader = PDFPlumberLoader(file_path)  
 print("Begin Docs")
-docs = loader.load()  
+#//*** Load PDF 
+documents = loader.load()  
+############################################################
+
 
 ################################################
 # KGO has issue with HuggingFace as a source.
@@ -75,29 +81,92 @@ docs = loader.load()
 #text_splitter = SemanticChunker(OpenAIEmbeddings())
 
 
-#print(documents)
-
+#//*** Chunks whole pages with some overlap of previous chunk
 text_splitter = RecursiveCharacterTextSplitter(
     chunk_size=1000,
-    chunk_overlap=0,
+    chunk_overlap=100, 
     length_function=len,
     is_separator_regex=False
 )
 
-documents = text_splitter.split_documents(docs)
+naive_chunks = text_splitter.split_documents(documents)
+
+
+print(naive_chunks)
+
+print("Storing Embeddings")
+
+# store each document in a vector embedding database
+offset = 0;
+for i, d in enumerate(naive_chunks):
+	if (len(d)) == 0:
+		offset = offset + 1
+		continue
+	i = i - offset
+	#print(str(len(documents)),str(i),str(len(d)),d)
+	response = ollama.embeddings(model="mxbai-embed-large", prompt=d)
+	embedding = response["embedding"]
+	collection.add(
+		ids=[str(i)],
+		embeddings=[embedding],
+		documents=[d]
+		)
+
+
+
+
+
+#//********************************************************************************
+#//********************************************************************************
+#//********************************************************************************
+#//********************************************************************************
+
+sys.exit()
+
+#//*** Chunk the text. Using Naieve recursion. Semantic Chunking is Preferable.
+text_pages = [whole_text]
+
+text_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=1000,
+    chunk_overlap=100, 
+    length_function=len,
+    is_separator_regex=False
+)
+naive_chunks = text_splitter.split_documents(text_pages)
+for chunk in naive_chunks:
+	print("============")
+	print(chunk.page_content+ "\n")
+
+
+
+sys.exit()
+
+text_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=1000,
+    chunk_overlap=100,
+    length_function=len,
+    is_separator_regex=False
+)
+
+#documents = text_splitter.split_documents(docs)
 
 naive_chunks = text_splitter.split_documents(documents)
 
 #//*** This Section displays the Text chunks. It kind of keeps the sentences together. It's definitely
 #//*** Naive
-#for chunk in naive_chunks:
-#  print(chunk.page_content+ "\n")
-
-
+for chunk in naive_chunks:
+	print("============")
+	print(chunk.page_content+ "\n")
 
 
 
 sys.exit()
+#//***********************************************************************
+#//*** Load PDF as a Binary to cleanly remove the image references
+#//*** Pile all the text into a single String. We'll use the chunker to
+#//*** organize for context. Although Splitting by page isn't a bad
+#//*** Way to Go
+#//***********************************************************************
 text_pages = []
 with pdfplumber.open(file_path,unicode_norm="NFC") as pdf:
 	for page in pdf.pages:
