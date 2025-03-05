@@ -52,7 +52,7 @@ print(collection_name)
 #//*** Spin up Chroma DB interfcae
 #client = chromadb.Client() #<---  Memory only Client
 client = chromadb.PersistentClient(path="pdfs") # <--- Save Documents to Disk
-#collection = client.create_collection(name="docs")
+collection = client.get_or_create_collection(name="docs")
 #collection = client.get_or_create_collection(name="collection_name")
 
 #results = collection.get()
@@ -93,23 +93,35 @@ naive_chunks = text_splitter.split_documents(documents)
 
 
 print(naive_chunks)
-
+print(len(documents))
+print(len(naive_chunks))
 print("Storing Embeddings")
+
+for i, d in enumerate(naive_chunks[:10]):
+	print("=========================")
+	print(f"{i} - {d}")
+	print(type(d))
 
 # store each document in a vector embedding database
 offset = 0;
 for i, d in enumerate(naive_chunks):
-	if (len(d)) == 0:
+	print("=========================")
+	print("=========================")
+	print("=========================")
+	print(f"{i} - {d.page_content}")
+	
+	if (len(d.page_content)) == 0:
 		offset = offset + 1
 		continue
 	i = i - offset
 	#print(str(len(documents)),str(i),str(len(d)),d)
-	response = ollama.embeddings(model="mxbai-embed-large", prompt=d)
+	response = ollama.embeddings(model="mxbai-embed-large", prompt=d.page_content)
 	embedding = response["embedding"]
 	collection.add(
 		ids=[str(i)],
 		embeddings=[embedding],
-		documents=[d]
+		metadatas=[d.metadata],
+		documents=[d.page_content]
 		)
 
 
