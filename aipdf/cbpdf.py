@@ -24,6 +24,10 @@
 #//***
 #//*** https://medium.com/the-ai-forum/semantic-chunking-for-rag-f4733025d5f5
 
+#Flask
+#https://levelup.gitconnected.com/build-a-complete-opensource-llm-rag-qa-chatbot-flask-server-dc7938239a6b
+
+
 import pdfplumber, os, re, sys
 import ollama,chromadb
 
@@ -46,6 +50,10 @@ g = {
 }#//*** END global Settings
 
 file_path = "DashBoard_CustomPanel_Development_Guide_(8351DR-007).pdf"
+#//*** Used to store files that in the database. For starter we will not add duplicate file names
+db_files = []
+process_pdf = False
+
 collection_name = file_path.split(".")[0]
 print(collection_name)
 
@@ -55,76 +63,127 @@ client = chromadb.PersistentClient(path="pdfs") # <--- Save Documents to Disk
 collection = client.get_or_create_collection(name="docs")
 #collection = client.get_or_create_collection(name="collection_name")
 
-#results = collection.get()
+results = collection.get()
 
 print(client.list_collections())
+print(results)
 
-############################################################
-# Loads PDF into Plain Text Array. Separated by each page
-############################################################
-# Load PDF text  
-print("Begin Loader")
-loader = PDFPlumberLoader(file_path)  
-print("Begin Docs")
-#//*** Load PDF 
-documents = loader.load()  
-############################################################
+#//*** Check if File Exists in Chroma db
+print(results.keys())
+
+if "metadatas" in results.keys():
+	for item in results["metadatas"]:
+		if "source" in item.keys():
+			if item["source"] not in db_files:
+				db_files.append(item["source"])
+
+print(db_files)
+print(file_path)
+#//*** Check if file to process already exists in the database. If No, Add PDF for Processing.
+if file_path not in db_files:
+	process_pdf = True
+
+#//*** process_pdf if needed
+if process_pdf:
+
+	############################################################
+	# Loads PDF into Plain Text Array. Separated by each page
+	############################################################
+	# Load PDF text  
+	print("Begin Loader")
+	loader = PDFPlumberLoader(file_path)  
+	print("Begin Docs")
+	#//*** Load PDF 
+	documents = loader.load()  
+	############################################################
 
 
-################################################
-# KGO has issue with HuggingFace as a source.
-################################################
-# Split text into semantic chunks  
-# text_splitter = SemanticChunker(HuggingFaceEmbeddings())  
+	################################################
+	# KGO has issue with HuggingFace as a source.
+	################################################
+	# Split text into semantic chunks  
+	# text_splitter = SemanticChunker(HuggingFaceEmbeddings())  
 
-# OpenAI requires an API Key
-#text_splitter = SemanticChunker(OpenAIEmbeddings())
+	# OpenAI requires an API Key
+	#text_splitter = SemanticChunker(OpenAIEmbeddings())
 
 
-#//*** Chunks whole pages with some overlap of previous chunk
-text_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=1000,
-    chunk_overlap=100, 
-    length_function=len,
-    is_separator_regex=False
+	#//*** Chunks whole pages with some overlap of previous chunk
+	text_splitter = RecursiveCharacterTextSplitter(
+	    chunk_size=1000,
+	    chunk_overlap=100, 
+	    length_function=len,
+	    is_separator_regex=False
+	)
+
+	naive_chunks = text_splitter.split_documents(documents)
+
+
+	print(naive_chunks)
+	print(len(documents))
+	print(len(naive_chunks))
+	print("Storing Embeddings")
+
+	for i, d in enumerate(naive_chunks[:10]):
+		print("=========================")
+		print(f"{i} - {d}")
+		print(type(d))
+
+	# store each document in a vector embedding database
+	offset = 0;
+	for i, d in enumerate(naive_chunks):
+		print("=========================")
+		print("=========================")
+		print("=========================")
+		print(f"{i} - {d.page_content}")
+		
+		if (len(d.page_content)) == 0:
+			offset = offset + 1
+			continue
+		i = i - offset
+		#print(str(len(documents)),str(i),str(len(d)),d)
+		response = ollama.embeddings(model="mxbai-embed-large", prompt=d.page_content)
+		#response = ollama.embeddings(model="mixtral", prompt=d.page_content)
+		embedding = response["embedding"]
+		collection.add(
+			ids=[str(i)],
+			embeddings=[embedding],
+			metadatas=[d.metadata],
+			documents=[d.page_content]
+			)
+
+#//**** Load AI
+print("Load AI")
+print("Prompting")
+
+# an example prompt
+prompt = "Summarize OGML"
+
+# generate an embedding for the prompt and retrieve the most relevant doc
+response = ollama.embeddings(
+  prompt=prompt,
+  model="mxbai-embed-large"
 )
 
-naive_chunks = text_splitter.split_documents(documents)
+print("=== Response ----")
+results = collection.query(
+  query_embeddings=[response["embedding"]],
+  n_results=1
+)
+data = results['documents'][0][0]
 
+print("Prompting")
+#print(results['documents'][0][0])
+print(response)
+print(results)
+sys.exit()
+# generate a response combining the prompt and data we retrieved in step 2
+output = ollama.generate(
+  model="mixtral",
+  prompt=f"Using this data: {data}. Respond to this prompt: {prompt}"
+)
 
-print(naive_chunks)
-print(len(documents))
-print(len(naive_chunks))
-print("Storing Embeddings")
-
-for i, d in enumerate(naive_chunks[:10]):
-	print("=========================")
-	print(f"{i} - {d}")
-	print(type(d))
-
-# store each document in a vector embedding database
-offset = 0;
-for i, d in enumerate(naive_chunks):
-	print("=========================")
-	print("=========================")
-	print("=========================")
-	print(f"{i} - {d.page_content}")
-	
-	if (len(d.page_content)) == 0:
-		offset = offset + 1
-		continue
-	i = i - offset
-	#print(str(len(documents)),str(i),str(len(d)),d)
-	response = ollama.embeddings(model="mxbai-embed-large", prompt=d.page_content)
-	embedding = response["embedding"]
-	collection.add(
-		ids=[str(i)],
-		embeddings=[embedding],
-		metadatas=[d.metadata],
-		documents=[d.page_content]
-		)
-
-
+print(output['response'])
 
 
 
