@@ -45,8 +45,10 @@ from langchain_community.llms import Ollama
 g = {
 	"path" : {
 		"chroma" : "persistent_document_db",
-		"pdf" : "./pdf"
-	}
+		"pdf" : "./pdf",
+	},
+	"embedding_model" : "mxbai-embed-large",
+	"model" : "llama3.2",
 }#//*** END global Settings
 
 file_path = "DashBoard_CustomPanel_Development_Guide_(8351DR-007).pdf"
@@ -66,7 +68,7 @@ collection = client.get_or_create_collection(name="docs")
 results = collection.get()
 
 print(client.list_collections())
-print(results)
+#print(results)
 
 #//*** Check if File Exists in Chroma db
 print(results.keys())
@@ -142,7 +144,9 @@ if process_pdf:
 			continue
 		i = i - offset
 		#print(str(len(documents)),str(i),str(len(d)),d)
-		response = ollama.embeddings(model="mxbai-embed-large", prompt=d.page_content)
+		response = ollama.embeddings(model=g["embedding_model"], prompt=d.page_content)
+		embedding_dimensions = 256
+		response.set_embedding_dimensions(embedding_dimensions)
 		#response = ollama.embeddings(model="mixtral", prompt=d.page_content)
 		embedding = response["embedding"]
 		collection.add(
@@ -158,11 +162,15 @@ print("Prompting")
 
 # an example prompt
 prompt = "Summarize OGML"
+#prompt = "What are the best things in life?"
+prompt = "using OG Script Reference How would I configure a rosstalk listener in Dashboard?"
+
+print("Prompt: ", prompt)
 
 # generate an embedding for the prompt and retrieve the most relevant doc
 response = ollama.embeddings(
   prompt=prompt,
-  model="mxbai-embed-large"
+  model=g["model"]
 )
 
 print("=== Response ----")
@@ -174,12 +182,12 @@ data = results['documents'][0][0]
 
 print("Prompting")
 #print(results['documents'][0][0])
-print(response)
-print(results)
-sys.exit()
+#print(response)
+#print(results)
+
 # generate a response combining the prompt and data we retrieved in step 2
 output = ollama.generate(
-  model="mixtral",
+  model=g["model"],
   prompt=f"Using this data: {data}. Respond to this prompt: {prompt}"
 )
 
