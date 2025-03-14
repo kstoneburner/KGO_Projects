@@ -49,7 +49,17 @@ g = {
 	},
 	"embedding_model" : "mxbai-embed-large",
 	"model" : "llama3.2",
+	"model" : "deepseek-r1:1.5b",
+	"model" : "gemma3:1b",
+	"model" : "mixtral",
 }#//*** END global Settings
+
+#//*** Make the embedding model the same as the model, to help with dimensionality
+g["embedding_model"] = g["model"]
+path_model = g["model"]
+path_model = path_model.replace(":","_")
+
+path_model = f"pdf_{path_model}"
 
 file_path = "DashBoard_CustomPanel_Development_Guide_(8351DR-007).pdf"
 #//*** Used to store files that in the database. For starter we will not add duplicate file names
@@ -61,7 +71,7 @@ print(collection_name)
 
 #//*** Spin up Chroma DB interfcae
 #client = chromadb.Client() #<---  Memory only Client
-client = chromadb.PersistentClient(path="pdfs") # <--- Save Documents to Disk
+client = chromadb.PersistentClient(path=path_model) # <--- Save Documents to Disk
 collection = client.get_or_create_collection(name="docs")
 #collection = client.get_or_create_collection(name="collection_name")
 
@@ -145,8 +155,8 @@ if process_pdf:
 		i = i - offset
 		#print(str(len(documents)),str(i),str(len(d)),d)
 		response = ollama.embeddings(model=g["embedding_model"], prompt=d.page_content)
-		embedding_dimensions = 256
-		response.set_embedding_dimensions(embedding_dimensions)
+		#embedding_dimensions = 256
+		#response.set_embedding_dimensions(embedding_dimensions)
 		#response = ollama.embeddings(model="mixtral", prompt=d.page_content)
 		embedding = response["embedding"]
 		collection.add(
@@ -178,6 +188,7 @@ results = collection.query(
   query_embeddings=[response["embedding"]],
   n_results=1
 )
+
 data = results['documents'][0][0]
 
 print("Prompting")
