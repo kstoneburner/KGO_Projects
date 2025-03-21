@@ -61,7 +61,47 @@ if 'messages' not in st.session_state:
     st.session_state.messages = []
 
 
+def handlePrompt(callback):
+	print("Handle Prompt")
+	prompt = st.text_input("Prompt: ", value="Summarize OGML",key="prompt_input")
+	callback(prompt)
 
+def handlePromptResponse(input_prompt):
+	print("Input Prompt:" + input_prompt)
+	prompt = input_prompt
+	# generate an embedding for the prompt and retrieve the most relevant doc
+	st.info("Building Embedding Response")
+	response = ollama.embeddings(
+	  prompt=prompt,
+	  model=g["model"]
+	)
+
+	print("=== Response ----")
+	st.info("Getting Results")
+	results = collection.query(
+	  query_embeddings=[response["embedding"]],
+	  n_results=1
+	)
+
+	data = results['documents'][0][0]
+
+	print("Prompting")
+	#print(results['documents'][0][0])
+	#print(response)
+	#print(results)
+
+	st.info("Generating Response")
+	# generate a response combining the prompt and data we retrieved in step 2
+	output = ollama.generate(
+	  model=g["model"],
+	  prompt=f"Using this data: {data}. Respond to this prompt: {prompt}"
+	)
+
+	print(output['response'])
+	st.info(output['response'])
+	print("END Response")
+
+	#handlePrompt(handlePromptResponse)
 
 def main():
 	print("Hello World")
@@ -86,7 +126,7 @@ def main():
 	exp = ZeroDivisionError("Trying to divide by Zero")
 	st.exception(exp)
 
-
+	
 	#//**** Load AI
 	print("Load AI")
 	print("Prompting")
@@ -96,8 +136,13 @@ def main():
 	#prompt = "What are the best things in life?"
 	prompt = "using OG Script Reference How would I configure a rosstalk listener in Dashboard?"
 
-	print("Prompt: ", prompt)
+	print("Initialize Handle Prompt")
+	handlePrompt(handlePromptResponse)
 
+	#print("Prompt: ", prompt)
+
+	print("END MAIN")
+	return
 	# generate an embedding for the prompt and retrieve the most relevant doc
 	response = ollama.embeddings(
 	  prompt=prompt,
@@ -124,6 +169,8 @@ def main():
 	)
 
 	print(output['response'])
+	st.info(output['response'])
+	print("END MAIN")
 
 
 if __name__ == "__main__":
