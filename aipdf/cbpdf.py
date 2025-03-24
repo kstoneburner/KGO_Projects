@@ -52,6 +52,8 @@ g = {
 	"model" : "deepseek-r1:1.5b",
 	"model" : "gemma3:1b",
 	"model" : "mixtral",
+	"model" : "gemma3:27b",
+	"model" : "deepseek-r1:70b",
 }#//*** END global Settings
 
 #//*** Make the embedding model the same as the model, to help with dimensionality
@@ -191,6 +193,7 @@ results = collection.query(
 
 data = results['documents'][0][0]
 
+print(data)
 print("Prompting")
 #print(results['documents'][0][0])
 #print(response)

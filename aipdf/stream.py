@@ -1,6 +1,9 @@
 #//*** Python Streamlit Application Example
 #//*** https://medium.com/@anoopjohny2000/building-a-llama-3-1-8b-streamlit-chat-app-with-local-llms-a-step-by-step-guide-using-ollama-749931de216a
 
+#// python -m streamlit run stream.py
+
+
 import streamlit as st
 from llama_index.core.llms import ChatMessage
 import logging
@@ -30,6 +33,7 @@ g = {
 	"model" : "deepseek-r1:1.5b",
 	"model" : "gemma3:1b",
 	"model" : "mixtral",
+	"model" : "deepseek-r1:70b",
 }#//*** END global Settings
 
 g["embedding_model"] = g["model"]
@@ -61,30 +65,41 @@ if 'messages' not in st.session_state:
     st.session_state.messages = []
 
 
-def handlePrompt(callback):
-	print("Handle Prompt")
-	prompt = st.text_input("Prompt: ", value="Summarize OGML",key="prompt_input")
-	callback(prompt)
+def handlePrompt():
+	st.text_input("Prompt: ", value="Summarize OGML",key="prompt_input", on_change=handlePromptResponse, args=None)
+	#callback(prompt)
 
-def handlePromptResponse(input_prompt):
-	print("Input Prompt:" + input_prompt)
-	prompt = input_prompt
+def dd():
+	print("CALLBACK")
+	st.write(st.session_state.prompt_input)
+	print(st.session_state.prompt_input)
+
+def handlePromptResponse():
+	#//*** Called as Part of On_Change of st.text_input
+	print("CALLBACK")
+
+	#//*** Writes the Text_input value to the session state using the key prompt_input which is assign to st.text_input
+	st.write(st.session_state.prompt_input)
+
+	#//*** Pull the session_state
+	prompt = st.session_state.prompt_input
 	# generate an embedding for the prompt and retrieve the most relevant doc
 	st.info("Building Embedding Response")
+	st.sidebar.write("Building Embedding Response")
 	response = ollama.embeddings(
 	  prompt=prompt,
 	  model=g["model"]
 	)
 
 	print("=== Response ----")
-	st.info("Getting Results")
+	st.sidebar.write("Getting Results")
 	results = collection.query(
 	  query_embeddings=[response["embedding"]],
 	  n_results=1
 	)
 
 	data = results['documents'][0][0]
-
+	st.sidebar.write(results)
 	print("Prompting")
 	#print(results['documents'][0][0])
 	#print(response)
@@ -126,6 +141,7 @@ def main():
 	exp = ZeroDivisionError("Trying to divide by Zero")
 	st.exception(exp)
 
+	st.sidebar.write("___")
 	
 	#//**** Load AI
 	print("Load AI")
@@ -137,7 +153,7 @@ def main():
 	prompt = "using OG Script Reference How would I configure a rosstalk listener in Dashboard?"
 
 	print("Initialize Handle Prompt")
-	handlePrompt(handlePromptResponse)
+	handlePrompt()
 
 	#print("Prompt: ", prompt)
 
