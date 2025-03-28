@@ -31,9 +31,9 @@ g = {
 	"embedding_model" : "mxbai-embed-large",
 	"model" : "llama3.2",
 	"model" : "deepseek-r1:1.5b",
+	"model" : "deepseek-r1:70b",
 	"model" : "gemma3:1b",
 	"model" : "mixtral",
-	"model" : "deepseek-r1:70b",
 }#//*** END global Settings
 
 g["embedding_model"] = g["model"]
@@ -66,13 +66,24 @@ if 'messages' not in st.session_state:
 
 
 def handlePrompt():
-	st.text_input("Prompt: ", value="Summarize OGML",key="prompt_input", on_change=handlePromptResponse, args=None)
+	st.text_input("Generate Prompt: ", value="Summarize OGML",key="prompt_input", on_change=handlePromptResponse, args=None)
+	st.text_input("Chat Prompt: ", value="Summarize OGML",key="prompt_input_chat", on_change=handlePromptChat, args=None)
 	#callback(prompt)
 
 def dd():
 	print("CALLBACK")
 	st.write(st.session_state.prompt_input)
 	print(st.session_state.prompt_input)
+
+def list_to_string(input_list):
+	
+	output = ""
+	#//*** Combine the Query results into a single data string for the llm.
+	for text in input_list:
+		print(text)
+		output+=text
+
+	return output
 
 def handlePromptResponse():
 	#//*** Called as Part of On_Change of st.text_input
@@ -95,11 +106,57 @@ def handlePromptResponse():
 	st.sidebar.write("Getting Results")
 	results = collection.query(
 	  query_embeddings=[response["embedding"]],
-	  n_results=1
+	  n_results=10
 	)
 
 	data = results['documents'][0][0]
 	st.sidebar.write(results)
+	print("Prompting")
+	#print(results['documents'][0][0])
+	#print(response)
+	#print(results)
+
+	st.info("Generating Response")
+	# generate a response combining the prompt and data we retrieved in step 2
+	output = ollama.generate(
+	  model=g["model"],
+	  prompt=f"Using this data: {data}. Respond to this prompt: {prompt}"
+	)
+
+	print(output['response'])
+	st.info(output['response'])
+	print("END Response")
+
+	#handlePrompt(handlePromptResponse)
+
+def handlePromptChat():
+	#//*** Called as Part of On_Change of st.text_input
+	print("CALLBACK")
+
+	#//*** Writes the Text_input value to the session state using the key prompt_input which is assign to st.text_input
+	st.write(st.session_state.prompt_input)
+
+	#//*** Pull the session_state
+	prompt = st.session_state.prompt_input
+	# generate an embedding for the prompt and retrieve the most relevant doc
+	st.info("Building Embedding Response")
+	st.sidebar.write("Building Embedding Response")
+	response = ollama.embeddings(
+	  prompt=prompt,
+	  model=g["model"]
+	)
+
+	print("=== Response ----")
+	st.sidebar.write("Getting Results")
+	results = collection.query(
+	  query_embeddings=[response["embedding"]],
+	  n_results=10
+	)
+
+	data = results['documents'][0][0]
+
+	data = list_to_string(results['documents'][0])
+	st.sidebar.write(data)
 	print("Prompting")
 	#print(results['documents'][0][0])
 	#print(response)
@@ -123,23 +180,23 @@ def main():
 
 
 	# Title
-	st.title("Hello GeeksForGeeks !!!")
+	#st.title("Hello GeeksForGeeks !!!")
 
 	# success
-	st.success("Success")
+	#st.success("Success")
 
 	# success
-	st.info("Information")
+	#st.info("Information")
 
 	# success
-	st.warning("Warning")
+	#st.warning("Warning")
 
 	# success
-	st.error("Error")
+	#st.error("Error")
 
 	# Exception - This has been added later
-	exp = ZeroDivisionError("Trying to divide by Zero")
-	st.exception(exp)
+	#exp = ZeroDivisionError("Trying to divide by Zero")
+	#st.exception(exp)
 
 	st.sidebar.write("___")
 	
@@ -168,10 +225,12 @@ def main():
 	print("=== Response ----")
 	results = collection.query(
 	  query_embeddings=[response["embedding"]],
-	  n_results=1
+	  n_results=10
 	)
 
 	data = results['documents'][0][0]
+
+
 
 	print("Prompting")
 	#print(results['documents'][0][0])
@@ -179,14 +238,22 @@ def main():
 	#print(results)
 
 	# generate a response combining the prompt and data we retrieved in step 2
-	output = ollama.generate(
+	#output = ollama.generate(
+	#  model=g["model"],
+	#  prompt=f"Using this data: {data}. Respond to this prompt: {prompt}"
+	#)
+
+	#print(output['response'])
+	#st.info(output['response'])
+	#print("END MAIN")
+
+	output = ollama.chat(
 	  model=g["model"],
-	  prompt=f"Using this data: {data}. Respond to this prompt: {prompt}"
+	  messages=[{'role': 'user', 'content' :"Using this data: {data}. Respond to this prompt: {prompt}"}]
 	)
 
-	print(output['response'])
-	st.info(output['response'])
-	print("END MAIN")
+	for chunk in output:
+  		print(chunk['message']['content'], end='', flush=True)
 
 
 if __name__ == "__main__":

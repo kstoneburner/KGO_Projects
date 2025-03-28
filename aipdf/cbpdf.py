@@ -54,6 +54,7 @@ g = {
 	"model" : "mixtral",
 	"model" : "gemma3:27b",
 	"model" : "deepseek-r1:70b",
+	"model" : "mxbai-embed-large",
 }#//*** END global Settings
 
 #//*** Make the embedding model the same as the model, to help with dimensionality
