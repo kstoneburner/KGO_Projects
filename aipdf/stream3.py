@@ -29,6 +29,7 @@ g = {
 		"pdf" : "./pdf",
 	},
 	"embedding_model" : "mxbai-embed-large",
+	"run_once" : True,
 	"model" : "llama3.2",
 	"model" : "deepseek-r1:1.5b",
 	"model" : "deepseek-r1:70b",
@@ -40,14 +41,21 @@ g = {
 
 logging.basicConfig(level=logging.INFO)
 
-if 'messages' not in st.session_state:
-    st.session_state.messages = []
+#//*** initialize Session State Lists
+for x in ['messages','chat_messages']:
+	if x not in st.session_state:
+		st.session_state[x]	= []
 
-if 'chat_messages' not in st.session_state:
-    st.session_state.chat_messages = []
+#//*** initialize Session State Strings
+for x in ['prompt_input','streaming_message','whole_chat_text']:
+	if x not in st.session_state:
+		st.session_state[x]	= ""
+if "run_once" not in st.session_state:
+	st.session_state.run_once = True
 
-st.session_state.prompt_input = ""
-
+if st.session_state.run_once:
+	text_input_container = st.container(border=True)
+	response_container = st.container(border=True)
 
 def get_models() -> list:
     thelist = requests.get("http://127.0.0.1:11434/api/tags")
@@ -60,14 +68,6 @@ def get_models() -> list:
     return result
 
 
-def handlePrompt():
-	st.text_input("Chat Prompt: ", value="Who was Bill Clinton?",key="prompt_input", on_change=handlePromptResponse, args=None)
-	#callback(prompt)
-
-def dd():
-	print("CALLBACK")
-	st.write(st.session_state.prompt_input)
-	print(st.session_state.prompt_input)
 
 def list_to_string(input_list):
 	
@@ -90,9 +90,9 @@ def create_message(message, role):
 def handlePromptResponse():
 	#//*** Called as Part of On_Change of st.text_input
 	print("CALLBACK")
-
+	
 	#//*** Writes the Text_input value to the session state using the key prompt_input which is assign to st.text_input
-	st.write(st.session_state.prompt_input)
+	st.write(st.session_state.prompt_input,key="prompt_input")
 
 	#//*** Pull the session_state
 	prompt = st.session_state.prompt_input
@@ -103,110 +103,73 @@ def handlePromptResponse():
 	#  model=g["model"],
 	#  prompt=f"Using this data: {data}. Respond to this prompt: {prompt}"
 	#)
+	#//*** Add the Message to the Chat History
+	st.session_state.chat_messages.append(
+    	create_message(prompt, 'user')
+  	)
 	# Calling the ollama API to get the assistant response
 	ollama_response = ollama.chat(model=g['model'], stream=True, messages=st.session_state.chat_messages)
-
+	
 	# Preparing the assistant message by concatenating all received chunks from the API
-	assistant_message = ''
-
+	st.session_state.streaming_message = f"***{st.session_state.prompt_input}***  "
+	st.session_state.assistant_message = ""
+	print(f"QUESTION: {st.session_state.prompt_input}")
+	response_container = st.empty()
 	for chunk in ollama_response:
-		assistant_message += chunk['message']['content']
+		#//*** Goes to the Screen
+		st.session_state.streaming_message += chunk['message']['content']
+		
+		#//*** Goes to the Chat History
+		st.session_state.assistant_message += chunk['message']['content']
 		print(chunk['message']['content'], end='', flush=True)
+		
+		response_container.write(st.session_state.streaming_message)
+
 
 	# Adding the finalized assistant message to the chat log
-	st.session_state.chat_messages.append(create_message(assistant_message, 'assistant'))
-
+	st.session_state.chat_messages.append(create_message(st.session_state.assistant_message, 'assistant'))
+	print(st.session_state.chat_messages)
 	#print(output['response'])
 	#st.info(output['response'])
 	print("END Response")
 
 	#handlePrompt(handlePromptResponse)
 
-def handlePromptChat():
-	#//*** Called as Part of On_Change of st.text_input
-	print("CALLBACK")
 
-	#//*** Writes the Text_input value to the session state using the key prompt_input which is assign to st.text_input
-	st.write(st.session_state.prompt_input)
-
-	#//*** Pull the session_state
-	prompt = st.session_state.prompt_input
-	# generate an embedding for the prompt and retrieve the most relevant doc
-	st.info("Building Embedding Response")
-	st.sidebar.write("Building Embedding Response")
-	response = ollama.embeddings(
-	  prompt=prompt,
-	  model=g["model"]
-	)
-
-	print("=== Response ----")
-	st.sidebar.write("Getting Results")
-	results = collection.query(
-	  query_embeddings=[response["embedding"]],
-	  n_results=10
-	)
-
-	data = results['documents'][0][0]
-
-	data = list_to_string(results['documents'][0])
-	st.sidebar.write(data)
-	print("Prompting")
-	#print(results['documents'][0][0])
-	#print(response)
-	#print(results)
-
-	with open('whole_dashboard.txt', 'r', encoding='utf-8') as f:
-		data = f.read()
-
-	st.info("Generating Response")
-	# generate a response combining the prompt and data we retrieved in step 2
-	output = ollama.generate(
-	  model=g["model"],
-	  prompt=f"Using this data: {data}. Respond to this prompt: {prompt}"
-	)
-
-	print(output['response'])
-	st.info(output['response'])
-	print("END Response")
-
-	#handlePrompt(handlePromptResponse)
 
 def main():
-	print("Hello World")
 
-	#//*** Build Active Models
-	g['models'] = get_models()
+	if st.session_state.run_once:
+		print(st.session_state.run_once)
+		st.session_state.run_once = False
+		print("Hello World")
 
-	g['model'] = g['models'][0]
-	print(g['models'])
-	print(f"Active Model: {g['model']}")
+		#//*** Build Active Models
+		g['models'] = get_models()
 
-	st.sidebar.write("___")
-	
-	#//**** Load AI
-	print("Load AI")
-	print("Prompting")
+		g['model'] = g['models'][0]
+		print(g['models'])
+		print(f"Active Model: {g['model']}")
 
-	# an example prompt
-	prompt = "Summarize OGML"
-	#prompt = "What are the best things in life?"
-	prompt = "using OG Script Reference How would I configure a rosstalk listener in Dashboard?"
+		st.sidebar.write("___")
+		
+		#//**** Load AI
+		print("Load AI")
+		print("Prompting")
 
-	print("Initialize Handle Prompt")
-	handlePrompt()
+		# an example prompt
+		#prompt = "Summarize OGML"
+		#prompt = "What are the best things in life?"
+		prompt = "using OG Script Reference How would I configure a rosstalk listener in Dashboard?"
+		text_input_container.text_input("Generate Prompt: ", value="Summarize OGML",key="prompt_input", on_change=handlePromptResponse, args=None)
+		
+		#response_container.write("___")
+		
 
-	#print("Prompt: ", prompt)
 
-	print("END MAIN")
-	return
+		#print("Prompt: ", prompt)
 
-	output = ollama.chat(
-	  model=g["model"],
-	  messages=[{'role': 'user', 'content' :"Using this data: {data}. Respond to this prompt: {prompt}"}]
-	)
-
-	for chunk in output:
-  		print(chunk['message']['content'], end='', flush=True)
+		print("END MAIN")
 
 
 if __name__ == "__main__":
