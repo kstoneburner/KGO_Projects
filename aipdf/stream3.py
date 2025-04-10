@@ -1,16 +1,22 @@
 #//*** Python Streamlit Application Example
 #//*** https://medium.com/@anoopjohny2000/building-a-llama-3-1-8b-streamlit-chat-app-with-local-llms-a-step-by-step-guide-using-ollama-749931de216a
 
+#You are a conversation partner with Gemma3. Please provide an estimate of the current token count used in our conversation. Focus on the number of tokens, not the specific words. Aim for a concise answer – a number is fine
+
 #// python -m streamlit run stream3.py
 
 
 import streamlit as st
-from llama_index.core.llms import ChatMessage
+#from llama_index.core.llms import ChatMessage
 import logging
 import time
 
 import pdfplumber, os, re, sys
 import ollama,requests
+from streamlit_float import *
+
+# Float feature initialization
+float_init()
 
 #from langchain_community.document_loaders import PDFPlumberLoader
 #from langchain_experimental.text_splitter import SemanticChunker
@@ -53,9 +59,17 @@ for x in ['prompt_input','streaming_message','whole_chat_text']:
 if "run_once" not in st.session_state:
 	st.session_state.run_once = True
 
-if st.session_state.run_once:
-	text_input_container = st.container(border=True)
-	response_container = st.container(border=True)
+text_input_container = st.container(border=False)
+
+css = float_css_helper(bottom="0")
+text_input_container.float(css)
+
+response_container = st.sidebar.container(border=False)
+response_container = st.sidebar.empty()
+
+chat_container = st.container(border=False)
+chat_container.write(st.session_state.whole_chat_text)
+
 
 def get_models() -> list:
     thelist = requests.get("http://127.0.0.1:11434/api/tags")
@@ -92,7 +106,7 @@ def handlePromptResponse():
 	print("CALLBACK")
 	
 	#//*** Writes the Text_input value to the session state using the key prompt_input which is assign to st.text_input
-	st.write(st.session_state.prompt_input,key="prompt_input")
+	#st.write(st.session_state.prompt_input,key="prompt_input")
 
 	#//*** Pull the session_state
 	prompt = st.session_state.prompt_input
@@ -111,10 +125,10 @@ def handlePromptResponse():
 	ollama_response = ollama.chat(model=g['model'], stream=True, messages=st.session_state.chat_messages)
 	
 	# Preparing the assistant message by concatenating all received chunks from the API
-	st.session_state.streaming_message = f"***{st.session_state.prompt_input}***  "
+	st.session_state.streaming_message = f"***{st.session_state.prompt_input}***\n\r"
 	st.session_state.assistant_message = ""
 	print(f"QUESTION: {st.session_state.prompt_input}")
-	response_container = st.empty()
+	#response_container = st.empty()
 	for chunk in ollama_response:
 		#//*** Goes to the Screen
 		st.session_state.streaming_message += chunk['message']['content']
@@ -129,6 +143,9 @@ def handlePromptResponse():
 	# Adding the finalized assistant message to the chat log
 	st.session_state.chat_messages.append(create_message(st.session_state.assistant_message, 'assistant'))
 	print(st.session_state.chat_messages)
+	
+
+	st.session_state.whole_chat_text = st.session_state.whole_chat_text + "\n\r" + "---" + "\n\r" + st.session_state.streaming_message
 	#print(output['response'])
 	#st.info(output['response'])
 	print("END Response")
@@ -139,37 +156,38 @@ def handlePromptResponse():
 
 def main():
 
-	if st.session_state.run_once:
-		print(st.session_state.run_once)
-		st.session_state.run_once = False
-		print("Hello World")
+	
+	print(st.session_state.run_once)
+	st.session_state.run_once = False
+	print("Hello World")
 
-		#//*** Build Active Models
-		g['models'] = get_models()
+	#//*** Build Active Models
+	g['models'] = get_models()
 
-		g['model'] = g['models'][0]
-		print(g['models'])
-		print(f"Active Model: {g['model']}")
+	g['model'] = g['models'][0]
+	print(g['models'])
+	print(f"Active Model: {g['model']}")
 
-		st.sidebar.write("___")
-		
-		#//**** Load AI
-		print("Load AI")
-		print("Prompting")
+	st.sidebar.write("___")
+	
+	#//**** Load AI
+	print("Load AI")
+	print("Prompting")
 
-		# an example prompt
-		#prompt = "Summarize OGML"
-		#prompt = "What are the best things in life?"
-		prompt = "using OG Script Reference How would I configure a rosstalk listener in Dashboard?"
-		text_input_container.text_input("Generate Prompt: ", value="Summarize OGML",key="prompt_input", on_change=handlePromptResponse, args=None)
-		
-		#response_container.write("___")
-		
+	# an example prompt
+	#prompt = "Summarize OGML"
+	#prompt = "What are the best things in life?"
+	prompt = "using OG Script Reference How would I configure a rosstalk listener in Dashboard?"
+	text_input_container.text_input("Generate Prompt: ", value="Summarize OGML",key="prompt_input", on_change=handlePromptResponse, args=None)		
+	
+	#response_container.write("___")
+	
 
 
-		#print("Prompt: ", prompt)
+	#print("Prompt: ", prompt)
 
-		print("END MAIN")
+	print(f"Session State Length: {len(st.session_state)}" )
+	print("END MAIN")
 
 
 if __name__ == "__main__":
