@@ -1,32 +1,45 @@
 #//*** Python Streamlit Application Example
 #//*** https://medium.com/@anoopjohny2000/building-a-llama-3-1-8b-streamlit-chat-app-with-local-llms-a-step-by-step-guide-using-ollama-749931de216a
 
+#//*** Cookie Manager Docs
+#https://pypi.org/project/st-cookies-manager/
+
 #You are a conversation partner with Gemma3. Please provide an estimate of the current token count used in our conversation. Focus on the number of tokens, not the specific words. Aim for a concise answer – a number is fine
+
+#Models:
+# Wizard-vicuna-uncensored:7b:13B
+# deepcoder
+# wizardlm-uncensored
+# dolphin-mistral
+# dolphincoder
+# DeepSeek-R1-Distill-Qwen-7B-uncensored
+
+
 
 #// python -m streamlit run stream3.py
 
 
 import streamlit as st
+from streamlit import components
+
 #from llama_index.core.llms import ChatMessage
 import logging
 import time
+import secrets
+import string
 
 import pdfplumber, os, re, sys
-import ollama,requests
+import ollama,requests,json, io
 from streamlit_float import *
 
 # Float feature initialization
 float_init()
 
-#from langchain_community.document_loaders import PDFPlumberLoader
-#from langchain_experimental.text_splitter import SemanticChunker
-#from langchain.text_splitter import RecursiveCharacterTextSplitter  
-#from langchain_community.embeddings import HuggingFaceEmbeddings 
-#from langchain_huggingface import HuggingFaceEmbeddings
-#from langchain_openai.embeddings import OpenAIEmbeddings
+from st_cookies_manager import EncryptedCookieManager
 
-#from langchain_community.vectorstores import FAISS  
-#from langchain_community.llms import Ollama  
+
+
+print()
 
 #//*** Global Settings
 g = {
@@ -34,6 +47,7 @@ g = {
 		"chroma" : "persistent_document_db",
 		"pdf" : "./pdf",
 	},
+	"cookies" : None,
 	"embedding_model" : "mxbai-embed-large",
 	"run_once" : True,
 	"model" : "llama3.2",
@@ -68,7 +82,26 @@ response_container = st.sidebar.container(border=False)
 response_container = st.sidebar.empty()
 
 chat_container = st.container(border=False)
-chat_container.write(st.session_state.whole_chat_text)
+#chat_container.write(st.session_state.whole_chat_text)
+
+def initCookies():
+
+	#//*** Build Secure Password as needed
+	if "COOKIES_PASSWORD" not in os.environ:
+		alphabet = string.ascii_letters + string.digits
+		password = ''.join(secrets.choice(alphabet) for i in range(20))  # for a 20-character password
+		os.environ["COOKIES_PASSWORD"] = password
+	
+	g['cookies'] = EncryptedCookieManager(
+    # This prefix will get added to all your cookie names.
+    # This way you can run your app on Streamlit Cloud without cookie name clashes with other apps.
+    prefix="ktosiek/st-cookies-manager/",
+    # You should really setup a long COOKIES_PASSWORD secret if you're running on Streamlit Cloud.
+    password=os.environ.get("COOKIES_PASSWORD"),
+)
+#if not g['cookies'].ready():
+    # Wait for the component to load and send us current cookies.
+#    st.stop()
 
 
 def get_models() -> list:
@@ -77,7 +110,12 @@ def get_models() -> list:
     result = list()
 
     for model in jsondata["models"]:
-        result.append(model["model"])
+
+    	if "mxbai-embed-large" in model["model"]:
+    		continue
+    	result.append(model["model"])
+
+ 
 
     return result
 
@@ -102,8 +140,11 @@ def create_message(message, role):
 
 
 def handlePromptResponse():
+	def handleStop():
+		stop = True
 	#//*** Called as Part of On_Change of st.text_input
 	print("CALLBACK")
+	stop = False
 	
 	#//*** Writes the Text_input value to the session state using the key prompt_input which is assign to st.text_input
 	#st.write(st.session_state.prompt_input,key="prompt_input")
@@ -111,6 +152,8 @@ def handlePromptResponse():
 	#//*** Pull the session_state
 	prompt = st.session_state.prompt_input
 	# generate an embedding for the prompt and retrieve the most relevant doc
+	st.sidebar.button('Stop',on_click=handleStop())
+
 	st.sidebar.write("Generating Response")
 	# generate a response combining the prompt and data we retrieved in step 2
 	#output = ollama.generate(
@@ -139,6 +182,9 @@ def handlePromptResponse():
 		
 		response_container.write(st.session_state.streaming_message)
 
+		if stop:
+			return
+
 
 	# Adding the finalized assistant message to the chat log
 	st.session_state.chat_messages.append(create_message(st.session_state.assistant_message, 'assistant'))
@@ -152,11 +198,62 @@ def handlePromptResponse():
 
 	#handlePrompt(handlePromptResponse)
 
+def handleSelectbox():
+	st.write(st.session_state['model'])
+	g['cookies']['model'] = st.session_state['model']
+	g['cookies'].save()
+	g['model'] = st.session_state['model']
+	print("Cookie: " + g['cookies']['model'])
+	print("DONG")
+
+def handleUpload():
+		
+		print("Handle Upload")
+
+		#st.write(st.session_state['upload'])
+
+		uploaded_file = st.session_state['upload']
+
+		if uploaded_file == None:
+			st.session_state.chat_messages = []
+			st.session_state.whole_chat_text = ""
+			return
+
+		if uploaded_file.type == "application/json":
+			#//*** Validate JSON for Chat History
+			data = json.loads(uploaded_file.getvalue().decode('utf-8'))
+		if 'type' in data.keys():
+			if data['type'] == 'chat-history':
+				st.session_state.assistant_message = data['chat']
+
+				st.session_state.chat_messages = data['chat']
 
 
+				for msg in st.session_state.assistant_message:
+					if msg['role'] == 'user':
+						st.session_state.whole_chat_text += f"\n\r**{msg['content']}**\n\r"
+					if msg['role'] == 'assistant':
+						st.session_state.whole_chat_text += msg['content'] + "\n\r"
+
+				#chat_container.write(st.session_state.whole_chat_text)
+				
+
+def buildExport():
+	data = {
+		'type' : 'chat-history',
+		'model' : g['model'],
+		'chat' : st.session_state.chat_messages
+	}
+	data = json.dumps(data)
+	print(data)
+	return data
 def main():
 
-	
+	initCookies()
+
+	if not g['cookies'].ready():
+	    # Wait for the component to load and send us current cookies.
+	    st.stop()
 	print(st.session_state.run_once)
 	st.session_state.run_once = False
 	print("Hello World")
@@ -164,24 +261,59 @@ def main():
 	#//*** Build Active Models
 	g['models'] = get_models()
 
+
+	default = 0
+	#//*** Model Cookie Not Found, Default to First Value in SelectBox
+	if 'model' not in g['cookies']:
+		g['cookies']['model'] = g['models'][0]
+		g['cookies'].save()
+	else:
+		if g['cookies']['model'] in g['models']:
+			for counter,val in enumerate(g['models']):
+				if g['cookies']['model'] == val:
+					default = counter
+
+
+	print(f"Default: {default}")
+
+	#st.sidebar.button("Export", on_click=handle_export())
+	
+	selectbox = st.sidebar.selectbox("Model", g['models'],key='model', index=default, on_change=handleSelectbox)
+
+	uploaded_file = st.sidebar.file_uploader("Import", type=".json", key='upload', on_change=handleUpload )
+	
+	#if uploaded_file is not None:
+	#	handleUpload(uploaded_file)
+
 	g['model'] = g['models'][0]
+	g['model'] = selectbox
+
+
 	print(g['models'])
 	print(f"Active Model: {g['model']}")
+	#print("Cookie: " + g['cookies']['model'])
+	data = buildExport()
+
+	st.sidebar.download_button(label="Export", data=data, mime="application/jsonl", file_name="llm_chat_history.json")
+	
 
 	st.sidebar.write("___")
+
+
 	
 	#//**** Load AI
 	print("Load AI")
 	print("Prompting")
 
 	# an example prompt
-	#prompt = "Summarize OGML"
-	#prompt = "What are the best things in life?"
-	prompt = "using OG Script Reference How would I configure a rosstalk listener in Dashboard?"
-	text_input_container.text_input("Generate Prompt: ", value="Summarize OGML",key="prompt_input", on_change=handlePromptResponse, args=None)		
+
+	text_input_container.text_input("Generate Prompt: ", value="",key="prompt_input", on_change=handlePromptResponse, args=None)		
 	
+
 	#response_container.write("___")
 	
+	#chat_container.write(st.session_state.whole_chat_text)
+	chat_container.write(f'''<div id="chat-container">{st.session_state.whole_chat_text}</div>''', unsafe_allow_html=True)
 
 
 	#print("Prompt: ", prompt)
