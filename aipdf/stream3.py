@@ -47,6 +47,10 @@ g = {
 		"chroma" : "persistent_document_db",
 		"pdf" : "./pdf",
 	},
+	"options" : {
+		"num_ctx" : 4096,
+		"num_ctx" : 2048,
+		},
 	"cookies" : None,
 	"embedding_model" : "mxbai-embed-large",
 	"run_once" : True,
@@ -165,7 +169,7 @@ def handlePromptResponse():
     	create_message(prompt, 'user')
   	)
 	# Calling the ollama API to get the assistant response
-	ollama_response = ollama.chat(model=g['model'], stream=True, messages=st.session_state.chat_messages)
+	ollama_response = ollama.chat(model=g['model'], options=g['options'], stream=True, messages=st.session_state.chat_messages)
 	
 	# Preparing the assistant message by concatenating all received chunks from the API
 	st.session_state.streaming_message = f"***{st.session_state.prompt_input}***\n\r"
