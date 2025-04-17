@@ -1,7 +1,11 @@
-import threading,socket
+import threading,socket,time
 
 PORTS = [10540,10541]
-
+h_name = None
+HOST = None
+h_name = socket.gethostname()
+HOST = socket.gethostbyname(h_name)
+    
 g = {
     'active_ports' : [], #//*** Holds the active MOS PORTS. Avoids double mounting
     'addr' : [], #//*** Active Connection List (Might be Legacy)
@@ -71,9 +75,11 @@ def listen_for_digi(input_port):
         #//*** Destroy any remaining Resources
         return
 
-def main:
-	print("Hello World, This is the next step in MOS dominance")
+def main():
 
+
+
+    print("Hello World, This is the next step in MOS dominance")
     #//*** Build a listener for each port in PORTS
     for port in PORTS:
         print(f"Spinning up Listener: {port}")
@@ -82,5 +88,7 @@ def main:
         listener.start()
         time.sleep(.5)
 
+    while True:
+        time.sleep(.1)
 if __name__ == "__main__":
 	main()
