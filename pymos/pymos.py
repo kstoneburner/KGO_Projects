@@ -1,13 +1,19 @@
+import threading,socket
 
+PORTS = [10540,10541]
 
+g = {
+    'active_ports' : [], #//*** Holds the active MOS PORTS. Avoids double mounting
+    'addr' : [], #//*** Active Connection List (Might be Legacy)
+    'quit' : False,
+}
 
 
 def listen_for_digi(input_port):   
     soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     
-    if input_port not in pc['active_ports']:
-        pc['active_ports'].append(input_port)
-    do_action("")
+    if input_port not in g['active_ports']:
+        g['active_ports'].append(input_port)
     
     PORT = input_port
 
@@ -19,26 +25,28 @@ def listen_for_digi(input_port):
         print("=====")
         
         with conn: 
-            pc['addr'].append(addr[0])
-            if not clear_screen:
-                print(f"Connected by {pc['addr']}")
-                #print(pc["conn"])
+            g['addr'].append(addr[0])
+            #if not clear_screen:
+            #    print(f"Connected by {pc['addr']}")
+            #    #print(pc["conn"])
                
 
             do_action("")
-            do_ack = False
-            while not pc["quit"]:
+            do_ack = True
+            while not g["quit"]:
                 # check for stop
                 if not clear_screen:
                     print("-")
                 try:
                     data = conn.recv(1024)
+                    print("Received: ", data)
+                    
                     if not data:
                         break
-                    if not clear_screen:
-                        print("Received: ", data)
+                    #if not clear_screen:
+                    #    print("Received: ", data)
 
-                    handleInput(data)
+                    #handleInput(data)
 
                     #if not do_ack:
                     #    do_ack = True
