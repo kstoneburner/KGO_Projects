@@ -35,8 +35,8 @@ def listen_for_digi(input_port):
             do_ack = True
             while not g["quit"]:
                 # check for stop
-                if not clear_screen:
-                    print("-")
+                #if not clear_screen:
+                #    print("-")
                 try:
                     data = conn.recv(1024)
                     print("Received: ", data)
@@ -63,7 +63,7 @@ def listen_for_digi(input_port):
         s.close()
 
         #//*** Remove the Address from the Connected List
-        pc['addr'].remove(addr[0])
+        g['addr'].remove(addr[0])
 
         #//*** Start New Socket listener
         listen_for_digi(PORT)
@@ -73,6 +73,14 @@ def listen_for_digi(input_port):
 
 def main:
 	print("Hello World, This is the next step in MOS dominance")
+
+    #//*** Build a listener for each port in PORTS
+    for port in PORTS:
+        print(f"Spinning up Listener: {port}")
+        listener = threading.Thread(target = listen_for_digi, args=[port])
+        listener.daemon = True
+        listener.start()
+        time.sleep(.5)
 
 if __name__ == "__main__":
 	main()
