@@ -10,6 +10,7 @@ g = {
     'active_ports' : [], #//*** Holds the active MOS PORTS. Avoids double mounting
     'addr' : [], #//*** Active Connection List (Might be Legacy)
     'quit' : False,
+    'packets_in' : [],
 }
 
 
@@ -27,7 +28,8 @@ def listen_for_digi(input_port):
         #pc["conn"], pc["addr"] 
         conn,addr = s.accept()
         print("=====")
-        
+        whole_packet = ""
+        print("Pre-Conn")
         with conn: 
             g['addr'].append(addr[0])
             #if not clear_screen:
@@ -35,15 +37,38 @@ def listen_for_digi(input_port):
             #    #print(pc["conn"])
                
 
-            do_action("")
+            #do_action("")
             do_ack = True
             while not g["quit"]:
                 # check for stop
                 #if not clear_screen:
                 #    print("-")
                 try:
+                    #//*** Receive 1024 of data. It's expected to be a partial Packet
                     data = conn.recv(1024)
-                    print("Received: ", data)
+                    #print("Raw Received: ", data)
+
+                    #//*** Convert the Byte arra to a UTF8 String.
+                    #//*** Add to the whole packet
+                    whole_packet += data.decode('utf-8', errors="replace")
+                    print("XXXXXXXXXXXXXXXXXX")
+
+                    #//*** Write Back on the connection to acknowledge it
+                    #//*** Probably need something more formal
+                    #//*** Or maybe need to roAck the Completed Packet
+                    conn.write("")
+                    
+
+                    #//*** If </mos> in whole_packet, then pack is complete
+                    #//*** Send Whole Packet to g['packets_in']
+                    #//*** Reset WholPacket for connection reuse
+                    if "</mos>" in whole_packet:
+                        print(whole_packet)
+                        g['packets_in'].append(whole_packet)
+                        whole_packet = ""
+                        print(g['packets_in'])
+
+
                     
                     if not data:
                         break
@@ -56,6 +81,7 @@ def listen_for_digi(input_port):
                     #    do_ack = True
                     #    conn.sendall(data)
                 except:
+                    print("Problem Processing Packet. Skipping it. Will need additional error handing code if this pops up.")
                     pass
 
         #//*** Connection Closed 
