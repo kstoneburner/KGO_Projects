@@ -221,7 +221,9 @@ def handleInput(raw_data):
 
     #//*** Convert the raw_data Byte Sequence to an Integer array
     data = []
+    #print("==========")
     for x in raw_data:
+
         #print(int(x),str(x),chr(x))
         data.append(int(x))
 
@@ -326,16 +328,27 @@ def handleInput(raw_data):
         
         #//*** Get the Values of Clip to Play
         cut = data[4:8]
+
+        
+        #print("6:",data[6],"7:",data[7],"8:",data[8])
         
         #//*** Convert Each value to a String based on the Byte Integer Separated By _
-        cut = ""
+        #cut = f"{str(data[4])}_{str(data[5])}_{str(data[6])}"
+        cut=""
         for x in data[4:6]:
             cut += str(x)+"_"
 
         #//*** Trim Trailing _
         #cut = cut[:-1]
 
-        cut += str(data[7])
+        if int(data[6]) == 0:
+            cut += str(data[7])
+        else:
+            #//*** Cut Number is Data[7] if data[6] == 0.
+            #//*** Essentially it's 2x INTs for a cut number, 64k of address space.
+            cut += str((int(data[6]) * 256) + int(data[7]))
+
+        #print("Cut:" + cut)
 
         #//*** Perform Digi Play Action
         #do_action("DIGI_PLAY",cut)
@@ -849,6 +862,8 @@ def do_action(input_action,input_cut=None):
         #//*** Check if selecting currently selected cut
         elif pc["selected_cut"] == input_cut:
 
+
+            print("Playing: " + str(pc["playing"]))
             #//*** Check if already playing
             if pc["playing"]:
 
@@ -856,6 +871,8 @@ def do_action(input_action,input_cut=None):
                 #//*** If Playlist, and Playing, do Nothing. Track list is already playing on repeat
                 #//*** Get the Music Object
                 music_obj = pc['cut'][ pc["selected_cut"] ]
+
+                print(music_obj)
 
                 #//*** Do Nothing unless it's ad playlist Object
                 if music_obj["type"] != "playlist":
@@ -865,19 +882,21 @@ def do_action(input_action,input_cut=None):
 
                     pc["playing"] = False
 
-
+                    print("Stopping:", str(pc["playing"]))
                     while pc["p"].is_playing():
                         pc["p"].stop()
                         time.sleep(.1)
 
+                        #do_action(input_action,input_cut)
+                        #return
 
-                        #//*** Quit BC it's not quite right
+                    #//*** Play Music Cut
+                    do_action("play")
+
+                    print("Should be Playing")
 
 
-                        #//*** Play Music Cut
-                        do_action("play")
-
-                        pc["playing"] = True
+                    pc["playing"] = True
                 else:
                     #//*** Quit BC it's not quite right
                     do_action("stop")
